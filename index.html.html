@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>WaterQuiz JARVIS v5</title>
+<style>
+:root{
+  --bg:#0d1117;--card:#161b22;--card2:#1c2230;--border:#2a3441;
+  --accent:#4f8ef7;--accent2:#7c5cbf;--green:#3fb950;--red:#f85149;
+  --yellow:#d29922;--text:#e6edf3;--sub:#8b949e;--r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif;min-height:100vh}
+.header{padding:18px 18px 0;display:flex;justify-content:space-between;align-items:center}
+.badge{background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;color:var(--sub)}
+.d-day{font-size:13px;color:var(--accent);font-weight:700}
+.hero{padding:14px 18px 16px}
+.hero h1{font-size:36px;font-weight:800;letter-spacing:-1px}
+.hero h1 span{color:var(--accent)}
+.hero p{color:var(--sub);font-size:12px;margin-top:3px}
+
+/* 연동 설정 카드 */
+.setup-card{margin:0 18px 12px;background:var(--card);border:1px solid var(--accent);border-radius:var(--r);padding:16px}
+.setup-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:10px}
+.setup-input{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;padding:10px;margin-bottom:8px}
+.setup-btns{display:flex;gap:8px}
+.setup-btn{flex:1;padding:10px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer}
+.setup-btn.primary{background:var(--accent);color:#fff}
+.setup-btn.secondary{background:var(--card2);color:var(--sub)}
+.setup-tip{font-size:11px;color:var(--sub);margin-top:8px;line-height:1.6}
+
+/* 동기화 상태 */
+.sync-bar{margin:0 18px 10px;padding:8px 12px;border-radius:8px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.sync-bar.ok{background:rgba(63,185,80,0.1);border:1px solid rgba(63,185,80,0.3);color:var(--green)}
+.sync-bar.err{background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--red)}
+.sync-bar.ing{background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);color:var(--accent)}
+.sync-bar.warn{background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);color:var(--yellow)}
+.sync-reset{font-size:11px;color:var(--sub);cursor:pointer;text-decoration:underline;white-space:nowrap}
+
+.due-banner{margin:0 18px 10px;background:rgba(210,153,34,0.1);border:1px solid rgba(210,153,34,0.3);border-radius:var(--r);padding:11px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+.due-banner-text{font-size:13px;color:var(--yellow)}
+.due-banner-count{font-size:18px;font-weight:800;color:var(--yellow)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 18px 14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.stat-card.full{grid-column:1/-1;border-color:var(--accent)}
+.stat-label{font-size:11px;color:var(--sub);margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.stat-pct{font-size:26px;font-weight:800}
+.stat-err{font-size:11px;color:var(--red);margin-top:1px}
+.pct-blue{color:var(--accent)}.pct-green{color:var(--green)}.pct-orange{color:var(--yellow)}.pct-pink{color:#e879a0}
+.config{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:0 18px 14px;padding:16px}
+.config-row{margin-bottom:12px}.config-row:last-child{margin-bottom:0}
+.config-label{font-size:11px;color:var(--sub);margin-bottom:7px}
+.btn-group{display:flex;gap:6px}
+.btn-opt{flex:1;padding:9px 0;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--sub);font-size:13px;cursor:pointer}
+.btn-opt.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.start-wrap{padding:0 18px 14px}
+.btn-start{width:100%;padding:16px;border-radius:var(--r);border:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.btn-start:active{opacity:0.85;transform:scale(0.98)}
+.tabs{display:flex;border-bottom:1px solid var(--border);padding:0 18px}
+.tab{flex:1;padding:12px 0;text-align:center;font-size:13px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.review-wrap{padding:14px 18px}
+.review-empty{text-align:center;padding:50px 0;color:var(--sub);font-size:14px}
+.review-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.review-item.due-item{border-color:var(--yellow)}
+.review-header{padding:14px 14px 0;cursor:pointer}
+.review-q{font-size:14px;line-height:1.5;margin-bottom:8px;font-weight:500}
+.review-meta{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:10px}
+.tag{font-size:11px;padding:3px 7px;border-radius:6px;background:var(--card2);color:var(--sub)}
+.tag.due-tag{background:rgba(210,153,34,0.15);color:var(--yellow)}
+.tag.subj-tag{background:rgba(79,142,247,0.12);color:var(--accent)}
+.tag.exam-tag{background:rgba(63,185,80,0.1);color:var(--green)}
+.review-detail{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.review-detail.open{display:block}
+.review-choices{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.r-choice{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card2);font-size:13px;line-height:1.4;color:var(--sub)}
+.r-choice.r-correct{border-color:var(--green);background:rgba(63,185,80,0.1);color:var(--green);font-weight:600}
+.r-explain{margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:8px;font-size:12px;color:var(--sub);line-height:1.6}
+.toggle-detail{width:100%;padding:8px;border:none;background:none;color:var(--sub);font-size:12px;cursor:pointer;border-top:1px solid var(--border)}
+.quiz-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:100;overflow-y:auto}
+.quiz-screen.show{display:block}
+.quiz-header{padding:18px 18px 10px;display:flex;align-items:center;gap:12px}
+.btn-back{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;color:var(--text);font-size:13px;cursor:pointer}
+.progress-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 0.3s}
+.q-counter{font-size:12px;color:var(--sub);white-space:nowrap}
+.timer-bar{height:3px;background:var(--border);margin:0 18px 14px;border-radius:2px;overflow:hidden}
+.timer-fill{height:100%;background:var(--green);border-radius:2px;transition:width 1s linear,background 0.3s}
+.q-body{padding:0 18px}
+.q-subject{font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px}
+.q-exam{font-size:11px;color:var(--green);margin-bottom:8px}
+.q-text{font-size:15px;line-height:1.65;font-weight:600;margin-bottom:18px}
+.q-choices{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.choice{padding:13px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--card);font-size:14px;line-height:1.4;cursor:pointer;text-align:left;color:var(--text);width:100%}
+.choice.correct{border-color:var(--green);background:rgba(63,185,80,0.12);color:var(--green)}
+.choice.wrong{border-color:var(--red);background:rgba(248,81,73,0.12);color:var(--red)}
+.choice.reveal-correct{border-color:var(--green);background:rgba(63,185,80,0.08)}
+.explain-box{background:var(--card2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.explain-title{font-size:11px;color:var(--sub);margin-bottom:6px}
+.explain-text{font-size:13px;line-height:1.6}
+.btn-next{width:calc(100% - 36px);margin:0 18px 28px;padding:15px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.result-screen{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto}
+.result-screen.show{display:block}
+.result-inner{padding:36px 18px}
+.result-pct{font-size:68px;font-weight:900;letter-spacing:-3px;text-align:center}
+.result-pct.pass{color:var(--green)}.result-pct.fail{color:var(--red)}
+.result-sub{color:var(--sub);font-size:13px;margin-top:4px;text-align:center;margin-bottom:28px}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px}
+.result-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+.result-card-label{font-size:10px;color:var(--sub);margin-bottom:3px}
+.result-card-val{font-size:20px;font-weight:800}
+.btn-home{width:100%;padding:14px;border-radius:var(--r);border:none;background:var(--card2);color:var(--text);font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn-retry{width:100%;padding:14px;border-radius:var(--r);border:none;background:var(--accent);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px}
+.subj-wrap{display:flex;flex-direction:column;gap:8px;padding:14px 18px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div id="home">
+  <div class="header">
+    <div class="badge">JARVIS · 수질환경기사</div>
+    <div class="d-day" id="dday-text">D-?</div>
+  </div>
+  <div class="hero">
+    <h1>시험까지 <span id="hero-days">?</span>일</h1>
+    <p>2026.08.01 필기 합격 목표</p>
+  </div>
+
+  <!-- Google Apps Script URL 설정 -->
+  <div class="setup-card" id="setup-card">
+    <div class="setup-title">🔗 구글 드라이브 연동 설정</div>
+    <input class="setup-input" id="gas-url-input" type="url" placeholder="Google Apps Script 배포 URL 붙여넣기">
+    <div class="setup-btns">
+      <button class="setup-btn primary" onclick="saveGasUrl()">연동 저장</button>
+      <button class="setup-btn secondary" onclick="hideSetup()">나중에</button>
+    </div>
+    <div class="setup-tip">
+      아직 설정 전이라면 → <b>나중에</b>를 누르고 지금 바로 퀴즈를 시작하세요.<br>
+      데이터는 이 기기에 임시 저장되다가 연동 후 자동으로 드라이브에 업로드됩니다.
+    </div>
+  </div>
+
+  <div class="sync-bar ing hidden" id="sync-bar">
+    <span id="sync-msg">⏳ 동기화 중...</span>
+    <span class="sync-reset" onclick="resetGasUrl()">연동 재설정</span>
+  </div>
+
+  <div class="due-banner hidden" id="due-banner" onclick="startQuiz('due')">
+    <div class="due-banner-text">🔁 오늘 망각곡선 복습 문제</div>
+    <div class="due-banner-count" id="due-count">0문제</div>
+  </div>
+  <div class="stats">
+    <div class="stat-card full">
+      <div class="stat-label"><span class="dot" style="background:var(--accent)"></span>전과목 누적 정확도</div>
+      <div class="stat-pct pct-blue" id="stat-all">-</div>
+      <div class="stat-err" id="err-all"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><span class="dot" style="background:var(--accent)"></span>수질오염개론</div>
+      <div class="stat-pct pct-blue" id="stat-1">-</div>
+      <div class="stat-err" id="err-1"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><span class="dot" style="background:var(--green)"></span>상하수도계획</div>
+      <div class="stat-pct pct-green" id="stat-2">-</div>
+      <div class="stat-err" id="err-2"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><span class="dot" style="background:var(--yellow)"></span>수질오염방지기술</div>
+      <div class="stat-pct pct-orange" id="stat-3">-</div>
+      <div class="stat-err" id="err-3"></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><span class="dot" style="background:#e879a0"></span>수질오염공정시험기준</div>
+      <div class="stat-pct pct-pink" id="stat-4">-</div>
+      <div class="stat-err" id="err-4"></div>
+    </div>
+  </div>
+  <div class="config">
+    <div class="config-row">
+      <div class="config-label">문제 수</div>
+      <div class="btn-group" id="cnt-group">
+        <button class="btn-opt" data-val="10">10</button>
+        <button class="btn-opt active" data-val="20">20</button>
+        <button class="btn-opt" data-val="30">30</button>
+        <button class="btn-opt" data-val="40">40</button>
+      </div>
+    </div>
+    <div class="config-row">
+      <div class="config-label">계산문제</div>
+      <div class="btn-group" id="calc-group">
+        <button class="btn-opt active" data-val="skip">스킵</button>
+        <button class="btn-opt" data-val="include">포함</button>
+      </div>
+    </div>
+    <div class="config-row">
+      <div class="config-label">30초 타이머</div>
+      <div class="btn-group" id="timer-group">
+        <button class="btn-opt active" data-val="on">ON</button>
+        <button class="btn-opt" data-val="off">OFF</button>
+      </div>
+    </div>
+  </div>
+  <div class="start-wrap">
+    <button class="btn-start" id="main-start-btn" onclick="startQuiz('random')">전과목 20문제 시작 →</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('review')">오답노트</div>
+    <div class="tab" onclick="switchTab('due')">오늘 복습</div>
+    <div class="tab" onclick="switchTab('subj')">과목별</div>
+  </div>
+  <div id="tab-review" class="review-wrap"></div>
+  <div id="tab-due" class="review-wrap hidden"></div>
+  <div id="tab-subj" class="hidden">
+    <div class="subj-wrap">
+      <button class="btn-start" style="background:linear-gradient(135deg,var(--accent),#2563eb)" onclick="startQuiz(1)">1과목 수질오염개론</button>
+      <button class="btn-start" style="background:linear-gradient(135deg,var(--green),#166534)" onclick="startQuiz(2)">2과목 상하수도계획</button>
+      <button class="btn-start" style="background:linear-gradient(135deg,var(--yellow),#92400e)" onclick="startQuiz(3)">3과목 수질오염방지기술</button>
+      <button class="btn-start" style="background:linear-gradient(135deg,#e879a0,#9f1239)" onclick="startQuiz(4)">4과목 수질오염공정시험기준</button>
+      <button class="btn-start" style="background:linear-gradient(135deg,var(--accent2),#581c87)" onclick="startQuiz('due')">🔁 망각곡선 복습만</button>
+    </div>
+  </div>
+</div>
+
+<div id="quiz-screen" class="quiz-screen">
+  <div class="quiz-header">
+    <button class="btn-back" onclick="exitQuiz()">← 나가기</button>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="q-counter" id="q-counter">1/20</div>
+  </div>
+  <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+  <div class="q-body">
+    <div class="q-subject" id="q-subject"></div>
+    <div class="q-exam" id="q-exam"></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="q-choices" id="q-choices"></div>
+    <div class="explain-box hidden" id="explain-box">
+      <div class="explain-title">📌 해설</div>
+      <div class="explain-text" id="explain-text"></div>
+    </div>
+  </div>
+  <button class="btn-next hidden" id="btn-next" onclick="nextQuestion()">다음 →</button>
+</div>
+
+<div id="result-screen" class="result-screen">
+  <div class="result-inner">
+    <div class="result-pct" id="result-pct"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="result-grid" id="result-grid"></div>
+    <button class="btn-retry" onclick="retryQuiz()">같은 조건으로 다시</button>
+    <button class="btn-home" onclick="goHome()">홈으로</button>
+  </div>
+</div>
+
+<script>
+const QUESTIONS = [
+  {id:1,subject:1,exam:'2022-04',text:'강우의 pH의 관한 설명으로 틀린 것은?',choices:['보통 대기중의 이산화탄소와 평형상태에 있는 물은 약 pH 5.7의 산성을 띠고 있다.','산성강우의 주요원인 물질로 황산화물, 질소산화물 및 염소산화물을 들 수 있다.','산성강우현상은 대기오염이 혹심한 지역에 국한되어 나타난다.','강우는 부유재(ﬂy ash)로 인하여 때때로 알칼리성을 띨 수 있다.'],answer:2,explain:'산성비는 넓은 지역으로 발생해 광범위한 피해를 입힌다',calc:false},
+  {id:2,subject:1,exam:'2022-04',text:'호소의 부영양화에 대한 일반적 영향으로 틀린 것은?',choices:['부영양화가 진행된 수원을 농업용수로 사용하면 영양염류의 공급으로 농산물 수확량이 지속적으로','조류나 미생물에 의해 생성된 용해성 유기물질이 불쾌한 맛과 냄새를 유발한다.','부영양화 평가모델은 인(P)부하모델인 Vollenweider 모델 등이 대표적이다.','심수층의 용존산소량이 감소한다.'],answer:0,explain:'부영양화 호수나 해역에 유기물이 유입되어 분해되면 질소와 인 등의 영양염류가 증가되어 조류가 과다하게 번식한 다. 과다하게 번식한 조류가 수중 산소를 고갈시키고 수질을 악화시키는데 이것을 부영양화라고 한다.',calc:false},
+  {id:3,subject:1,exam:'2022-04',text:'수질오염물질 중 중금속에 관한 설명으로 틀린 것은?',choices:['카드뮴 : 인체 내에서 투과성이 높고 이동성이 있는 독성 메틸 유도체로 전환된다.','비소 : 인산염 광물에 존재해서 인 화합물 형태로 환경 중에 유입된다.','납 : 급성독성은 신장, 생식계통, 간 그리고 뇌와 중추신경계에 심각한 장애를 유발한다.','수은 : 수은 중독은 BAL, Ca2EDTA로 치료할 수 있다.'],answer:0,explain:'카드뮴은 투과성이 낮아 체내에 쌓이고 이따이이따이병을 앓게 된다',calc:false},
+  {id:4,subject:1,exam:'2022-04',text:'광합성에 대한 설명으로 틀린 것은?',choices:['호기성광합성(녹색식물의 광합성)은 진조류와 청녹조류를 위시하여 고등식물에서 발견된다.','녹색식물의 광합성은 탄산가스와 물로부터 산소와 포도당(또는 포도당 유도산물)을 생성하는 것이','세균활동에 의한 광합성은 탄산가스의 산화를 위하여 물 이외의 화합물질이 수소원자를 공여, 유리','녹색식물의 광합성 시 광은 에너지를 그리고 물은 환원반응에 수소를 공급해 준다.'],answer:2,explain:'3. 탄산가스의 환원',calc:false},
+  {id:5,subject:1,exam:'2022-04',text:'물의 특성에 대한 설명으로 옳지 않은 것은?',choices:['기화열이 크기 때문에 생물의 효과적인 체온 조절이 가능하다.','비열이 크기 때문에 수온의 급격한 변화를 방지해 줌으로써 생물활동이 가능한 기온을 유지한다.','융해열이 작기 때문에 생물체의 결빙이 쉽게 일어나지 않는다.','빙점과 비점사이가 100℃나 되므로 넓은 범위에서 액체 상태를 유지할 수 있다.'],answer:2,explain:'융해열 물은 융해열이 크다. 융해열이란 고체에서 액체로 변화하기 위해 필요한 에너지를 말한다. 물의 융해열이 크다는 것은 0도의 얼음에서 0도의 물로 변하기 위해 필요한 에너지가 많이 필요하다는 것',calc:false},
+  {id:6,subject:1,exam:'2022-04',text:'생물농축에 대한 설명으로 가장 거리가 먼 것은?',choices:['수생생물체내의 각종 중금속 농도는 환경수중의 농도보다는 높은 경우가 많다.','생물체중의 농도와 환경수중의 농도비를 농축비 또는 농축계수라고 한다.','수생생물의 종류에 따라서 중금속의 농축비가 다른 경우가 많다.','농축비는 먹이사슬 과정에서 높은 단계의 소비자에 상당하는 생물일수록 낮게 된다.'],answer:2,explain:'생물농축 농축비는 높은 사슬의 생물일수록 높다. 예) 플랑크톤 1마리가 중금속을 1 축적하고 있다고 가정 멸치가 플랑크톤 1000마리를 먹는다 -> 중금속이 멸치 내에 1000 축적',calc:false},
+  {id:7,subject:1,exam:'2022-04',text:'부영양화가 진행된 호소에 대한 수면관리 대책으로 틀린 것은?',choices:['수증폭기한다.','퇴적층을 준설한다.','수생식물을 이용한다.','살조제는 황산알루미늄을 주로 많이 쓴다.'],answer:3,explain:'살조제 조류를 죽이는 성분을 지닌 물질 황산구리, 황산동, 과산화수소, 염소, 오존',calc:false},
+  {id:8,subject:1,exam:'2022-04',text:'생물학적 질화 중 아질산화에 관한 설명으로 틀린 것은?',choices:['Nitrobacter에 의해 수행된다.','수율은 0.04~0.13mg VSS/mg NH4+ -N정도이다.','관련 미생물은 독립영양성 세균이다.','산소가 필요하다.'],answer:0,explain:'아질산화 관여 미생물 : Nitrosomonas 질산화 관여 미생물 : Nitrobacter',calc:false},
+  {id:9,subject:1,exam:'2022-04',text:'0.01 M-KBr과 0.02 M-ZnSO4 용액의 이온강도는? (단, 완전 해리 기준)',choices:['0.08','0.09','0.12','0.14'],answer:1,explain:'이온강도 1가 이온 : 0.5 x 농도 2가 이온 : 2 x 농도 3가 이온 : 4.5 x 농도',calc:false},
+  {id:10,subject:1,exam:'2022-04',text:'반응속도에 관한 설명으로 알맞지 않은 것은?',choices:['영차반응 : 반응물의 농도에 독립적인 속도로 진행하는 반응이다.','일차반응 : 반응속도가 시간에 따른 반응물의 농도변화 정도에 반비례하여 진행하는 반응이다.','이차반응 : 반응속도가 한가지 반응물 농도의 제곱에 비례하여 진행하는 반응이다.','실험치에 따라 특정 반응속도의 차수를 구하기 위하여는 시간에 따른 농도변화를 그래프로 그리고'],answer:1,explain:'농도변화 정도에 비례 어떤 물질이 1/n로 감소하는데 걸리는 시간 계산 Ct/Co=e^(-kt) *Ct = t시간 후 남은 양',calc:false},
+  {id:11,subject:1,exam:'2022-04',text:'수질모델링을 위한 절차에 해당하는 항목으로 가장 거리가 먼 것은?',choices:['변수추정','수질예측 및 평가','보정','감응도 분석'],answer:1,explain:'1. 모델의 설계 및 자료수집 - 대상수계의 지역특성,형상, 수문학적 요소등을 고려하여 모델을 설계하고 현지 조사 및 문헌조사등을 통하여 입력자료 수집 2. 모델링의 선정 및 예비적용',calc:false},
+  {id:12,subject:2,exam:'2022-04',text:'다음의 기체 법칙 중 옳은 것은?',choices:['Boyle의 법칙 : 일정한 압력에서 기체의 부피는 절대온도에 정비례한다.','Henry의 법칙 : 기체와 관련된 화학반응에서는 반응하는 기체와 생성되는 기체의 부피 사이에 정수','Graham의 법칙 : 기체의 확산속도(조그마한 구멍을 통한 기체의 탈출)는 기체 분자량의 제곱근에','Gay-Lussac의 결합 부피 법칙 : 혼합 기체내의 각 기체의 부분압력은 혼합물 속의 기체의 양에 비'],answer:3,explain:'1  보일의 법칙 : 일정 온도에서 일정 질량의 기체가 가지는 압력과 부피의 곱은 일정하다. 2. 헨리의 법칙 : 난용성기체에만 적용되며, 일정한 온도에서 용매에 녹는 기체의 질량은 압력에 비례한 다. 4. 게이-루삭의 법칙 : 화학반응에서의 기체의 부피는 간단한 정수비를 나타낸다.',calc:false},
+  {id:13,subject:2,exam:'2022-04',text:'계획 오수량에 관한 설명으로 ()에 알맞은 내용은?',choices:['원칙적으로 계획 1일 최대 오수량의 2배','원칙적으로 계획 1일 최대 오수량의 3배','원칙적으로 계획시간 최대 오수량의 2배','원칙적으로 계획시간 최대 오수량의 3배'],answer:3,explain:'*참고 계획1일 최대오수량 : (1인1실 최대오수량*계획인구)+기타배수량 계획1일 평균오수량 : 계획1일 최대오수량의 70~80%를 표준으로 한다. 계획시간 최대오수량 : 계획1일 최대오수량의 1시간당 수량의 1.3~1.8배를 표준으로 한다.',calc:false},
+  {id:14,subject:2,exam:'2022-04',text:'하수 배제방식의 특징에 대한 설명으로 옳지 않은 것은?',choices:['분류식은 우천 시에 월류가 없다.','분류식은 강우초기 노면 세정수가 하천 등으로 유입되지 않는다.','합류식 시설의 일부를 개선 또는 개량하면 강우초기의 오염된 우수를 수용해서 처리할 수 있다.','합류식은 우천 시 일정량 이상이 되면 오수가 월류한다.'],answer:1,explain:'[하수 배제방식] 1) 분류식 : 일반 가정의 생활하수(오수)와 빗물(우수)을 각각 다른 하수관으로 흘러가게 함 - 우천시 월류가 없음 - 강우 초기의 오염된 우수 및 노면 오염물질이 처리되지 못하고 공공수역으로 방류',calc:false},
+  {id:15,subject:2,exam:'2022-04',text:'정수처리방법인 중간염소처리에서 염소의 주입 지점으로 가장 적절한 것은?',choices:['혼화지와 침전지 사이','침전지와 여과지 사이','착수정과 혼화지 사이','착수정과 도수관 사이'],answer:2,explain:'중간염소처리 : 원수 중에 부식질 등의 유기물이 존재하면 유리잔류염소와 반응하여 트리할로메탄이 생성 되므로 이러한 우려가 높을 경우에는 응집, 침전으로 부식질을 어느정도 제거한 후 염소처리를 하는 것. 침 전지와 여과지 사이에 염소를 주입한다.',calc:false},
+  {id:16,subject:2,exam:'2022-04',text:'하수관로에 관한 설명 중 옳지 않은 것은?',choices:['우수관로에서 계획하수량은 계획우수량으로 한다.','합류식 관로에서 계획하수량은 계획시간 최대오수량에 계획우수량을 합한 것으로 한다.','차집관로에서 계획하수량은 계획시간 최대 오수량으로 한다.','지역의 실정에 따라 계획하수량에 여유율을 둘 수 있다.'],answer:2,explain:'차집관거 계획하수량 : 우천시 계획하수량',calc:false},
+  {id:17,subject:2,exam:'2022-04',text:'기존의 하수처리시설에 고도처리시설을 설치하고자 할 때 검토사항으로 틀린 것은?',choices:['표준활성슬러지법이 설치된 기존처리장의 고도처리 개량은 개선대상 오염물질별 처리특성을 감안하','시설개량은 시설개량방식을 우선 검토하되 방류수 수질기준 준수가 곤란한 경우에 한해 운전개선방','기본설계과정에서 처리장의 운영실태 정밀분석을 실시한 후 이를 근거로 사업추진방향 및 범위 등을','기존시설물 및 처리공정을 최대한 활용하여야 한다.'],answer:1,explain:'운전개선방식을 먼저 추진하고 그 다음에 시설개량방식을 추진',calc:false},
+  {id:18,subject:2,exam:'2022-04',text:'해수담수화방식 중 상(相)변화방식인 증발법에 해당되는 것은?',choices:['가스수화물법','다중효용법','냉동법','전기투석법'],answer:1,explain:'나머지는 상불변(相不變)방식입니다. 비교회전도 = (N(rpm)*Q^(1/2))/H^(3/4) Q 단위 : m^3/min 흡입구경D(mm) = 146*(토출량Q(m^3/min)/유속V(m/s))^0.5',calc:false},
+  {id:19,subject:2,exam:'2022-04',text:'막모듈의 열화와 가장 거리가 먼 것은?',choices:['장기적인 압력부하에 의한 막 구조의 압밀화','건조되거나 수축으로 인한 막 구조의 비가역적인 변화','원수 중의 고형물이나 진동에 의한 막 면의 상처, 마모, 파단','막의 다공질부의 흡착, 석출, 포착 등에 의한 폐색'],answer:3,explain:'파울링: 일시적(가역적)인 변화 열화: 영구적(비가역적)인 변화 4번은 파울링',calc:false},
+  {id:20,subject:2,exam:'2022-04',text:'상수도 계획급수량과 관련된 내용으로 잘못된 것은?',choices:['계획1일평균급수량=계획1일평균사용수량/계획유효율','계획1일최대급수량=계획1일평균급수량×계획첨두율','일반적인 산청절차는 각 용도별 1일평균사용수량(실적)→각 계획용도별 1일평균 사용수량→계획 1','일반적으로 소규모 도시일수록 첨두율 값이 작다.'],answer:0,explain:'* 첨두율 : 평균급수량에 대한 최대급수량의 크기를 나타내는 것 소규모의 도시 일수록 값이 커짐 압력식(다중압송) 장점) 지형변화에 대응 용이, 공사점용면적 최소화 가능, 공사기간 및 민원의 최소화, 최소유속 확보',calc:false},
+  {id:21,subject:2,exam:'2022-04',text:'도수거에 관한 설명으로 옳지 않은 것은?',choices:['수리학적으로 자유 수면을 갖고 중력 작용으로 경사진 수로를 흐르는 시설이다.','개거나 암거인 경우에는 대개 300~500m 간격으로 시공조인트를 겸한 신축조인트를 설치한다.','균일한 동수경사(통상 1/3000~1/1000)로 도수하는 시설이다.','도수거의 평균유속의 최대한도는 3.0m/sec로 하고 최소유속은 0.3m/sec로 한다.'],answer:1,explain:'개거나 암거인 경우 대개 30~50m 간격으로 시공조인트를 겸한 신축조인트를 설치',calc:false},
+  {id:22,subject:2,exam:'2022-04',text:'하수처리를 위한 산화구법에 관한 설명으로 틀린 것은?',choices:['용량은 HRT가 24~48시간이 되도록 정한다.','형상은 장원형무한수로로 하며 수심은 1.0~3.0m, 수로 폭은 2.0~6.0m 정도가 되도록 한다.','저부하조건의 운전으로 SRT가 길어 질산화반응이 진행되기 때문에 무산소조건을 적절히 만들면 7','산화구내의 혼합상태가 균일하여도 구내에서 MLSS, 알칼리도 농도의 구배는 크다.'],answer:3,explain:'산화구 내의 혼합상태에 따른 용존산소농도는 흐름의 방향에 따라 지배를 받을 수 있지만 MLSS농도, 알 칼리도 등은 구내에서 균일하다.',calc:false},
+  {id:23,subject:2,exam:'2022-04',text:'취수시설에서 침사지에 관한 설명으로 옳지 않은 것은?',choices:['지의 위치는 가능한 한 취수구에 근접하여 제내지에 설치한다.','지의 상단높이는 고수위보다 0.3~0.6m의 여유고를 둔다.','지의 고수위는 계획취수량이 유입될 수 있도록 취수구의 계획최저수위 이하로 정한다.','지의 길이는 폭의 3~8배, 지내 평균 유속 2~7cm/sec를 표준으로 한다.'],answer:1,explain:'침사지의 상단높이는 고수위보다 0.6~1m의 여유고를 둠',calc:false},
+  {id:24,subject:2,exam:'2022-04',text:'상수의 공급과정을 바르게 나타낸 것은?',choices:['취수→도수→정수→송수→배수→급수','취수→도수→송수→정수→배수→급수','취수→송수→정수→배수→도수→급수','취수→송수→배수→정수→도수→급수'],answer:3,explain:'Q=AV 10=X*0.4 X=25 25=5^2',calc:false},
+  {id:25,subject:2,exam:'2022-04',text:'정수시설 중 플록형성지에 관한 설명으로 틀린 것은?',choices:['기계식교반에서 플록큐레이터(ﬂocculator)의 주변속도는 5~10cm/sec를 표준으로 한다.','플록형성시간은 계획정수량에 대하여 20~40분간을 표준으로 한다.','직사각형이 표준이다.','혼화지와 침전지 사이에 위치하고 침전지에 붙여서 설치한다.'],answer:0,explain:'기계식 교반에서 플로큐레이션의 주변속도는 15~80cm/s를 표준으로 함.',calc:false},
+  {id:26,subject:3,exam:'2022-04',text:'오수관거 계획 시 기준이 되는 오수량은?',choices:['계획시간최대오수량','계획1일최대오수량','계획시간평균오수량','계획1일평균오수량'],answer:0,explain:'오수관로: 계획시간 최대오수량 우수관로: 계획우수량 합류식 관로: 계획시간 최대오수량+ 계획우수량 차집관로: 우천시 계획하수량',calc:false},
+  {id:27,subject:3,exam:'2022-04',text:'탈질소 공정에서 폐수에 탄소원 공급용으로 가해지는 약품은?',choices:['응집제','질산','소석회','메탄올'],answer:0,explain:'메탄올을 탄소원으로 이용하는 탈질소 공정의 반응식 6NO3- + 5CH3OH > 6OH- + 3N2 + 5CO2 + 7H2O Air/Solid 비 [((1.3 x 공기용해량) x ((f x 유효전달압력) - 1 )) / MLSS 농도]',calc:false},
+  {id:28,subject:3,exam:'2022-04',text:'경사판 침전지에서 경사판의 효과가 아닌 것은?',choices:['수면적 부하율의 증가효과','침전지 소요면적의 저감효과','고형물의 침전효율 증대효과','처리효율의 증대효과'],answer:2,explain:'경사판의 효과 - 수면적이 커져 수면적 부하율이 줄어들어 침전지 소요 면적이 줄어든다 - 고형물의 침전효율이 증대되어 처리수가 청정화 된다 하수처리장 운영비의 가장 큰 부분을 차지하는 것이 전력요금이며, 전력요금의 대부분은 포기를 위한 송',calc:false},
+  {id:29,subject:3,exam:'2022-04',text:'Side Stream을 적용하여 생물학적 방법과 화학적 방법으로 인을 제거하는 공정은?',choices:['수정 Bardenpho 공정','Phostrip 공정','SBR 공정','UCT 공정'],answer:1,explain:'문제 Side stream (측류)에서 인제거하는 방법 Phostrip공정 main stream에서 인 제거하는 방법 A/O 공법',calc:false},
+  {id:30,subject:3,exam:'2022-04',text:'이온교환막 전기투석법에 관한 설명 중 옳지 않은 것은?',choices:['칼슘, 마그네슘 등 경도 물질의 제거효율은 높지만 인 제거율은 상대적으로 낮다.','콜로이드성 현탁물질 제거에 주로 적용된다.','배수 중의 용존염분을 제거하여 양질의 처리수를 얻는다.','소요전력은 용존염분농도에 비례하여 증가한다.'],answer:1,explain:'전기투석법은 막공법으로, 콜로이드성 물질은 응집침전법으로 처리함',calc:false},
+  {id:31,subject:3,exam:'2022-04',text:'분리막을 이용한 수처리 방법 중 추진력이 정수압차가 아닌 것은?',choices:['투석','정밀여과','역삼투','한외여과'],answer:2,explain:'투석 : 농도차 제 1형 침전: 독립침전, 자유침전 스토크 법칙을 따름 제 2형 침전: 플록침전, 응결침전, 응집침전 입자들이 서로 위치를 바꾸려 함 제 3형 침전: 지역침전, 계면침전, 방해침전 입자들이 서로 위치를 바꾸려 하지 않음',calc:false},
+  {id:32,subject:3,exam:'2022-04',text:'회전원판법(RBC)의 장점으로 가장 거리가 먼 것은?',choices:['미생물에 대한 산소 공급 소요전력이 적다.','고정메디아로 높은 미생물 농도 및 슬러지일령을 유지할 수 있다.','기온에 따른 처리효율의 영향이 적다.','재순환이 필요 없다.'],answer:2,explain:'기온에 따른 처리효율의 영향이 크다.',calc:false},
+  {id:33,subject:3,exam:'2022-04',text:'상향류 혐기성 슬러지상의 장점이라 볼 수 없는 것은?',choices:['미생물 체류시간을 적절히 조절하면 저농도 유기성 폐수의 처리도 가능하다.','기계적인 교반이나 여재가 필요 없기 때문에 비용이 적게 든다.','고액 및 기액분리장치를 제외하면 전체적으로 구조가 간단하다.','폐수 성상이 슬러지 입상화에 미치는 영향이 적어 안정된 처리가 가능하다.'],answer:3,explain:'상향류 혐기성 슬러지 상(UASB) 는 폐수의 성상에 의하여 슬러지의 입상화가 "크게" 영향을 받는다.',calc:false},
+  {id:34,subject:3,exam:'2022-04',text:'하수 고도처리 공법인 Phostrip 공정에 관한 설명으로 옳지 않은 것은?',choices:['기존 활성슬러지 처리장에 쉽게 적용 가능하다.','인제거 시 BOD/P비에 의하여 조절되지 않는다.','최종침전지에서 인용출을 위해 용존산소를 낮춘다.','Mainstream 화학침전에 비하여 약품사용량이 적다.'],answer:2,explain:'최종침전지에서 인용출 방지를 위해 용존산소를 높게 유지한다.',calc:false},
+  {id:35,subject:4,exam:'2022-04',text:'생물학적 처리법 가운데 살수여상법에 대한 설명으로 가장 거리가 먼 것은?',choices:['슬러지일령은 부유성장 시스템보다 높아 100일 이상의 슬러지일령에 쉽게 도달된다.','총괄 관측수율은 전형적인 활성슬러지공정의 60~80% 정도이다.','덮개 없는 여상의 재순환율을 증대시키면 실제로 여상 내의 평균온도가 높아진다.','정기적으로 여상에 살충제를 살포하거나 여상을 침수토록 하여 파리문제를 해결할 수 있다.'],answer:2,explain:'여상의 재순환율을 증가시키면 여상 내의 평균온도는 하강한다. 표면부하율 : 침전지에서 단위 면적당 처리하는 유량 표면부하율 = 처리유량/침전지 표면적 침전지 표면적 = 처리유량 / 표면부하율 = 10000 [m^3/day] / 50 [m^3/m^2*day] = 200m^2',calc:false},
+  {id:36,subject:4,exam:'2022-04',text:'시료의 보존방법으로 틀린 것은?',choices:['아질산성 질소 : 4℃ 보관, H2SO4로 pH2 이하','총질소(용존 총질소) : 4℃ 보관, H2SO4로 pH 2 이하','화학적 산소요구량 : 4℃ 보관, H2SO4로 pH 2이하','암모니아성 질소 : 4℃ 보관, H2SO4로 pH 2 이하'],answer:0,explain:'아질산성 질소 4도 보관 최대보존기간 48시간 권장보존기간 즉시',calc:false},
+  {id:37,subject:4,exam:'2022-04',text:'원자흡수분광광도법에서 일어나는 간섭에 대한 설명으로 틀린 것은?',choices:['광학적 간섭 : 분석하고자 하는 원소의 흡수 파장과 비슷한 다른 원소의 파장이 서로 겹쳐 비이상적','물리적 간섭 : 표준용액과 시료 또는 시료와 시료 간의 물리적 성질(점도, 밀도, 표면장력 등)의 차이','화학적 간섭 : 불꽃의 온도가 분자를 들뜬 상태로 만들기에 충분히 높지 않아서, 해당 파장을 흡수하','이온화 간섭 : 불꽃온도가 너무 낮을 경우 중성원자에서 전자를 빼앗아 이온이 생성될 수 있으며 이'],answer:0,explain:'이온화 간섭: 불꽃 온도가 너무 높을 경우 중성원자에서 전자를 빼앗아 이온이 생성될 수 있으며, 이 경우 음(-)의 오차가 발생하게 된다. COD = (시료의 적정에 소비된 KMnO4 용액량 - 바탕 적정에 소비된 KMnO4 용액량)*1000*0.2*factor/ 시료의 부피',calc:false},
+  {id:38,subject:4,exam:'2022-04',text:'35% HCI(비중 1.19)을 10% HCI으로 만들기 위한 35% HCI과 물의 용량비는?',choices:['1 : 1.5','3 : 1','1 : 3','1.5 : 1'],answer:2,explain:'35% HCl 용액 100g이 있다고 가정. HCl 성분 35g, 물+HCl 100g 10%로 만들기 위해 추가해야하는 물의 양 = 250g   (HCl 35g, 물+HCl 350g) 35% HCl 100g의 비중이 1.19 이므로',calc:false},
+  {id:39,subject:4,exam:'2022-04',text:'분원성 대장균군-막여과법에서 배양온도 유지 기준은?',choices:['25±0.2℃','30±0.5℃','35±0.5℃','44.5±0.2℃'],answer:3,explain:'총대장균군 : 35 분원성대장균군 : 44.5',calc:false},
+  {id:40,subject:4,exam:'2022-04',text:'ppm을 설명한 것으로 틀린 것은?',choices:['ppb농도의 1000배이다.','백만분율이라고 한다.','mg/kg이다.','%농도의 1/1000이다.'],answer:3,explain:'%농도의 1/10000이다.',calc:true},
+  {id:41,subject:4,exam:'2022-04',text:'유도결합플라스마-원자발광분광법에 의한 원소별 정량한계로 틀린 것은?',choices:['Cu : 0.006mg/L','Pb : 0.004mg/L','Ni : 0.015mg/L','Mn : 0.002mg/L'],answer:1,explain:'유도결합플라스마-원자발광분광법 Pb: 0.04mg/L',calc:false},
+  {id:42,subject:4,exam:'2022-04',text:'수질오염공정시험기준상 이온크로마토그래피법을 정량분석에 이용할 수 없는 항목은?',choices:['염소이온','아질산성 질소','질산성 질소','암모니아성 질소'],answer:3,explain:'이온크로마토그래피법: 음이온 측정 암모니아성 질소: 양이온',calc:false},
+  {id:43,subject:4,exam:'2022-04',text:'자외선/가시선 분광법을 적용한 음이온계면활성제 측정에 관한 설명으로 틀린 것은?',choices:['정량한계는 0.02mg/L이다.','시료 중의 계면활성제를 종류별로 구분하여 측정할 수 없다.','시료 속에 미생물이 있는 경우 일부의 음이온 계면활성제가 신속히 변할 가능성이 있으므로 가능한','양이온 계면활성제가 존재할 경우 양의 오차가 발생한다.'],answer:1,explain:'양이온 계면활성제 혹인 아민과 같은 양이온 물질이 존재 할 경우 \'음의 오차\'가 발생할 수 있다. 시안은 최대보존기간 14일 입니다.',calc:false},
+  {id:44,subject:4,exam:'2022-04',text:'용존산소(DO)측정 시 시료가 착색, 현탁된 경우에 사용하는 전처리시약은?',choices:['칼륨명반용액, 암모니아수','황산구리, 슬러민산용액','황산, 불화칼륨용액','황산제이철용액, 과산화수소'],answer:0,explain:'용존산소 전처리 착색,현탁된 경우:칼륨명반용액-암모니아수 플록 형성된 경우:황산구리-설퍼민산용액 산화성물질 함유된 경우(잔류염소):알칼리성 요오드화칼륨-아자이드화나트륨-황산-황산망간용액-전분',calc:false},
+  {id:45,subject:4,exam:'2022-04',text:'수질오염공정시험기준상 총대장균군의 시험방법이 아닌 것은?',choices:['현미경계수법','막여과법','시험관법','평판집락법'],answer:0,explain:'현미경계수법: 현미경으로 관찰되는 개체를 직접 하나씩 세는 것 상식적으로 대장균은 직접 세기 어렵다.',calc:false},
+  {id:46,subject:4,exam:'2022-04',text:'노말헥산추출물질 측정을 위한 시험방법에 관한 설명으로 ()에 옳은 것은?',choices:['메틸오렌지용액(0.1%) 2~3 방울을 넣고 황색이 적색으로','메틸오렌지용액(0.1%) 2~3 방울을 넣고 적색이 황색으로','메틸오렌지용액(0.5%) 2~3 방울을 넣고 황색이 적색으로','메틸오렌지용액(0.5%) 2~3 방울을 넣고 적색이 황색으로'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:47,subject:4,exam:'2022-04',text:'전기전도도 측정에 관한 설명으로 틀린 것은?',choices:['용액이 전류를 운반할 수 있는 정도를 말한다.','온도차에 의한 영향이 적어 폭 넓게 적용된다.','용액에 담겨있는 2개의 전극에 일정한 전압을 가해주면 가압 전압이 전류를 흐르게 하며, 이 때 흐르','용액 중의 이온세기를 신속하게 평가할 수 있는 항목으로 국제적으로 S(Siemens)단위가 통용되고'],answer:1,explain:'전기전도도 측정계 중에서 25oC에서의 자체온도 보상 회로가 설치되어 있는 것이 사용하기에 편리하 다.',calc:false},
+  {id:48,subject:4,exam:'2022-04',text:'크롬-원자흡수분광광도법의 정량한계에 관한 내용으로 ()에 옳은 것은?',choices:['㉠ 0.1, ㉡ 0.01','㉠ 0.01, ㉡ 0.1','㉠ 0.01, ㉡ 0.001','㉠ 0.001, ㉡ 0.01'],answer:2,explain:'3번이 정답입니다.',calc:false},
+  {id:49,subject:4,exam:'2022-04',text:'온도에 관한 내용으로 옳지 않은 것은?',choices:['찬 곳은 따로 규정이 없는 한 0~15℃의 곳을 뜻한다.','냉수는 15℃이하를 말한다.','온수는 70~90℃를 말한다.','상온은 15~25℃를 말한다.'],answer:2,explain:'온수는 60~70도 사이를 말한다',calc:false},
+  {id:50,subject:1,exam:'2022-03',text:'수질오염방지시설 중 물리적 처리시설에 해당되지 않는 것은?',choices:['유수분리시설','혼합시설','침전물 개량시설','응집시설'],answer:0,explain:'침전물 개량시설: 화학적 처리시설 매우 좋음: 용존산소 풍부, 간단처리 후 생활용수 좋음: 용존산소 많은 편, 일반처리 후 생활용수 약간 좋음: 약간의 오염물질, 일반처리 후 생활용수 또는 수영용수',calc:false},
+  {id:51,subject:1,exam:'2022-03',text:'하천 모델 중 다음의 특징을 가지는 것은?',choices:['QUAL - Ⅰ','WQRRS','DO SAG - Ⅰ','HSPE'],answer:0,explain:'1. QUAL - Ⅰ - 유속, 수심, 조도계수에 의한 확산계수 결정 - 하천과 대기 사이의 열복사, 열교환 고려 - 음해법으로 미분방정식의 해를 구함.',calc:false},
+  {id:52,subject:1,exam:'2022-03',text:'다음 중 수자원에 대한 특성으로 옳은 것은?',choices:['지하수는 지표수에 비하여 자연, 인위적인 국지조건에 따른 영향이 크다.','해수는 염분, 온도, pH 등 물리화학적 성상이 불안정하다.','하천수는 주변지질의 영향이 적고 유기물을 많이 함유하는 경우가 거의 없다.','우수의 주성분은 해수의 주성분과 거의 동일하다.'],answer:1,explain:'지구 물순환 중 가장 큰 역할은 증발이고 이러한 증발은 해수에서 90%이상 이루어지고 우수로 육지에 내려온다 KLA=0.06/0.75*(0.75*9.2-4.8) KLA=0.038/hr',calc:false},
+  {id:53,subject:1,exam:'2022-03',text:'BOD곡선에서 탈산소 계수를 구하는데 적용되는 방법으로 가장 알맞은 것은?',choices:['O Connor – Dobbins 식','Thomas 도해법','Rippl 법','Tracer 법'],answer:1,explain:'O\'Connor-Dobbins : 재산소화계수 계산 Thomas 도해법 : BOD 곡선 파라미터 추정 Rippl 법 : 저수지 용량 추정 Tracer 법 : 하천 유속/혼합/체류 분석',calc:false},
+  {id:54,subject:1,exam:'2022-03',text:'수질오염물질별 인체영향(질환)이 틀리게 짝지어진 것은?',choices:['비소 : 반상치(법랑반점)','크롬 : 비중력 연골천공','아연 : 기관지 자극 및 폐렴','납 : 근육과 관절의 장애'],answer:0,explain:'비소-피부염, 흑피증,  불소-반상치',calc:false},
+  {id:55,subject:1,exam:'2022-03',text:'알칼리도에 관한 반응 중 가장 부적절한 것은?',choices:['CO2 + H2O → H2CO3 → HCO3- + H+','HCO3- → CO32- + H+','CO32- + H2O → HCO3- + OH-','HCO3- + H2O → H2CO3 + OH-'],answer:3,explain:'H2CO3 + OH- → HCO3- + H2O',calc:false},
+  {id:56,subject:1,exam:'2022-03',text:'하천모델의 종류 중 DO SAG - Ⅰ, Ⅱ, Ⅲ에 관한 설명으로 틀린 것은?',choices:['2차원 정상상태 모델이다.','점오염원 및 비점오염원이 하천의 용존산소에 미치는 영향을 나타낼 수 있다.','Streeter-Phelps 식을 기본으로 한다.','저질의 영향이라 광합성 작용에 의한 용존산소반응을 무시한다.'],answer:1,explain:'1. 1차원 정상상태 모델이다 평판계수법: 생존가능한 세포수 측정 광학밀도 측정법: 총 세포량 변화분석 용존산소 소모율 측정법: 미생물의 대사활성 분석',calc:false},
+  {id:57,subject:1,exam:'2022-03',text:'녹조류(Green Algae)에 관한 설명으로 틀린 것은?',choices:['조류 중 가장 큰 문(division)이다.','저장물질은 라미나린(다당류)이다.','세포벽은 섬유소이다.','클로로필 a, b를 가지고 있다.'],answer:2,explain:'2. 아밀로오스(다당류)를 저장한다. 응집력은 반대하전이온의 가수가 클수록 강함 콜로이드 : 음이온 하전 상태(-) → 반대이온 양이온(+) 3가(+) > 2가 (+) > 1가 (+)',calc:false},
+  {id:58,subject:1,exam:'2022-03',text:'카드뮴이 인체에 미치는 영향으로 가장 거리가 먼 것은?',choices:['칼슘 대사기능 장해','Hunter-Russel 장해','골연화증','Fanconi씨 증후군'],answer:1,explain:'Hunter-russel - 수은중독',calc:false},
+  {id:59,subject:1,exam:'2022-03',text:'우리나라의 수자원 특성에 대한 설명으로 잘못된 것은?',choices:['우리나라의 연간 강수량은 약 1274mm로서 이는 세계평균 강수량의 1.2배에 이른다.','우리나라의 1인당 강수량은 세계평균량의 1/11 정도이다.','우리나라 수자원의 총 이용율은 9% 이내로 OECD 국가에 비해 적은 편이다.','수자원 이용현황은 농업용수가 가장 많은 비율을 차지하고 있고 하천유지용소, 생활용수, 공업용수'],answer:2,explain:'우리나라 수자원의 총 이용율은 36% 이내로 OECD 국가에 비해 높은 편이다',calc:false},
+  {id:60,subject:1,exam:'2022-03',text:'완충용액에 대한 설명으로 틀린 것은?',choices:['완충용액의 작용은 화학평형원리로 쉽게 설명된다.','완충용액은 한도 내에서 산을 가했을 때 pH에 약간의 변화만 준다.','완충용액은 보통 약산과 그 약산의 짝염기의 염을 함유한 용액이다.','완충용액은 보통 강염기와 그 염기의 강산의 염이 함유된 용액이다.'],answer:0,explain:'완충용액: 한정된 양의 산이나 염기 유입시 pH의 근소한 변화를 가져오는 용액 산 완충액: 약산과 그 약산의 강염기의 염 염기 완충액: 약염기와 그 약염기의 강산의 염 (1 poise = 1dyn•s/cm^2)',calc:false},
+  {id:61,subject:1,exam:'2022-03',text:'수은(Hg) 중독과 관련이 없는 것은?',choices:['난청, 언어장애, 구심성 시야협착, 정신장애를 일으킨다.','이따이이따이병을 유발한다.','유기수은은 무기수은보다 독성이 강하며 신경계통에 장해를 준다.','무기수은은 황화물 침전법, 활성탄 흡착법, 이온교환법 등으로 처리할 수 있다.'],answer:1,explain:'카드뮴중동-이따이이따이병유발',calc:false},
+  {id:62,subject:2,exam:'2022-03',text:'완전혼합 흐름 상태에 관한 설명 중 옳은 것은?',choices:['분산이 1일 때 이상적 완전혼합 상태이다.','분산수가 0일 때 이상적 완전혼합 상태이다.','Morrill 지수의 값이 1에 가까울수록 이상적 완전혼합 상태이다.','지체시간이 이론적 체류시간과 동일할 때 이상적 완전혼합 상태이다.'],answer:0,explain:'분산수가 ∞, Morrill지수가 클수록, 지체시간이 0일때 완전혼합상태임. HD=(11*50/12)+((8*50/20)+(2*50/44)=68.1',calc:false},
+  {id:63,subject:2,exam:'2022-03',text:'하천표류수를 수원으로 할 때 하천기준 수량은?',choices:['평수량','갈수량','홍수량','최대홍수량'],answer:3,explain:'하천 유량의 구분 갈 저 평 풍 고 홍 갈수량: 1년 중 355일은 유지되는 유량 저수량: 1년 중 275일은 유지되는 유량',calc:false},
+  {id:64,subject:2,exam:'2022-03',text:'상수처리를 위한 정수시설 중 착수정에 관한 내용으로 틀린 것은?',choices:['수위가 고수위 이상으로 올라가지 않도록 월류관이나 월류위어를 설치한다.','착수정의 고수위와 주변벽체의 상단 간에는 60cm 이상의 여유를 두어야 한다.','착수정의 용량은 체류시간을 30분 이상으로 한다.','필요에 따라 분말활성탄을 주입할 수 있는 장치를 설치하는 것이 바람직하다.'],answer:2,explain:'착수정의 체류시간 1.5분, 수심3~5m',calc:false},
+  {id:65,subject:2,exam:'2022-03',text:'하수처리수 재이용 처리시설에 대한 계획으로 적합하지 않은 것은?',choices:['처리시설의 위치는 공공하수처리시설 부지내에 설치하는 것을 원칙으로 한다.','재이용수 공급관로는 계획시간최대유량을 기준으로 계획한다.','처리시설에서 발생되는 농축수는 공공하수처리시설로 반류하지 않도록 한다.','재이용수 저장시설 및 펌프장은 일최대공급유량을 기준으로 한다.'],answer:2,explain:'3. 처리시설에서 발생되는 농축수는 공공하수처리시설로 반류하도록 한다.',calc:false},
+  {id:66,subject:2,exam:'2022-03',text:'계획오수량에 관한 설명으로 틀린 것은?',choices:['계획시간최대오수량은 계획1일 최대오수량의 1시간당 수량의 1.3~1.8배를 표준으로 한다.','지하수량은 1인 1일 최대오수량의 20% 이하로 한다.','합류식에서 우천 시 계획오수량은 원칙적으로 계획1일 최대오수량의 1.5배 이상으로 한다.','계획 1일 평균오수량은 계획1일 최대오수량의 70~80%를 표준으로 한다.'],answer:2,explain:'합류식에서 우천 시 계획오수량은 원칙적으로 계획시간최대오수량의 3배 이상으로 한다.',calc:false},
+  {id:67,subject:2,exam:'2022-03',text:'펌프의 수격작용을 방지하기 위한 방법으로 틀린 것은?',choices:['펌프의 플라이휠을 제거하는 방법','토출관쪽에 조압수조를 설치하는 방법','펌프 토출측에 완폐체크밸브를 설치하는 방법','관내 유속을 낮추거나 관로상황을 변경하는 방법'],answer:0,explain:'1. 펌프에 플라이휠을 붙이는 방법 -> 펌프의 관성을 증가시켜 급격한 압력강하를 완화한다.',calc:false},
+  {id:68,subject:2,exam:'2022-03',text:'하수도시설인 우수조정지의 여수토구에 관한 설명으로 ( ) 에 옳은 것은?',choices:['㉠ 10, ㉡ 1.2','㉠ 10, ㉡ 1.44','㉠ 100, ㉡ 1.2','㉠ 100, ㉡ 1.44'],answer:3,explain:'4번이 정답입니다.',calc:false},
+  {id:69,subject:2,exam:'2022-03',text:'하수도시설의 목적과 가장 거리가 먼 것은?',choices:['침수방지','하수의 배제와 이와 따른 생활환경의 개선','공공수역의 수질보전과 건전한 물순환의 회복','폐수의 적정처리와 이에 따른 산업단지 환경개선'],answer:3,explain:'4. 지속 가능한 도시 구축에 기여',calc:false},
+  {id:70,subject:2,exam:'2022-03',text:'하수처리에 사용되는 생물학적 처리공정 중 부유미생물을 이용한 공정이 아닌 것은?',choices:['산화구법','접촉산화법','질산화내생탈질법','막분리활성슬러지법'],answer:3,explain:'접촉산화법은 부착미생물을 이용한 공정이다 집수구멍의 직경은 10~20mm로 하며 그 수는 관거표면적 1m2당 20~30개 정도로 한다.',calc:false},
+  {id:71,subject:2,exam:'2022-03',text:'정수방법인 완속여과방식에 관한 설명으로 틀린 것은?',choices:['약품처리가 필요 없다.','완속여과의 정화는 주로 생물작용에 의한 것이다.','비교적 양호한 원수에 알맞은 방식이다.','소요 부지면적이 작다.'],answer:3,explain:'소요부지면적이 크다',calc:false},
+  {id:72,subject:2,exam:'2022-03',text:'펌프의 흡입관 설치요령으로 틀린 것은?',choices:['흡입관은 펌프 1대당 하나로 한다.','흡입관이 길 때에는 중간에 진동방지대를 설치할 수도 있다.','흡입관은 연결부나 기타 부분으로부터 절대로 공기가 흡입하지 않도록 한다.','흡입관과 취수정 바닥까지의 깊이는 흡인관 직경의 1.5배 이상으로 유격을 둔다.'],answer:3,explain:'흡입관과 흡수정 벽체사이의 거리는 관경의 1.5배 이상 두어야 한다',calc:false},
+  {id:73,subject:2,exam:'2022-03',text:'막여과법을 정수처리에 적용하는 주된 선정 이유로 가장 거리가 먼 것은?',choices:['응집제를 사용하지 않거나 또는 적게 사용한다.','막의 특성에 따라 원수 중의 현탁물질, 콜로이드, 세균류, 크립토스포리디움 등 일정한 크기 이상의','부지면적이 종래보다 적을 뿐 아니라 시설의 건설공사기간도 짧다.','막의 교환이나 세척 없이 반영구적으로 자동운전이 가능하여 유지관리 측면에서 에너지를 절약할 수'],answer:2,explain:'4. 정기 점검이나 막의 약품세척, 막의 교환이 필요하지만, 자동 운전이 용이하고, 일상적인 운전과 유지 관리에서 에너지를 절약할 수 있다. 지선관로 : 10년 / 간선관로 : 30년 / 빗물펌프장 : 30년',calc:false},
+  {id:74,subject:2,exam:'2022-03',text:'상수처리를 위한 정수시설인 급속여과지에 관한 설명으로 틀린 것은?',choices:['여과속도는 120~150 m/day를 표준으로 한다.','플록의 질이 일정한 것으로 가정하였을 때 여과층의 필요두께는 여재입경에 반비례한다.','여과면적은 계획정수량을 여과속도로 나누어 계산한다.','여과지 1지의 여과면적은 150m2 이하로 한다.'],answer:1,explain:'여과층의 필요두께는 여재입경, 여과속도에 비례한다.',calc:false},
+  {id:75,subject:2,exam:'2022-03',text:'정수시설의 시설능력에 관한 설명으로 ( )에 옳은 것은?',choices:['70%','75%','80%','85%'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:76,subject:2,exam:'2022-03',text:'상수도 취수시설 중 취수틀에 관한 설명으로 옳지 않은 것은?',choices:['구조가 간단하고 시공도 비교적 용이하다.','수중에 설치되므로 호소표면수는 취수할 수 없다.','단기간에 완성하고 안정된 취사가 가능하다.','보통 대형취수에 사용되며 수위변화에 영향이 적다.'],answer:3,explain:'중소량 취수시설로 많이 사용된다. Q= A*V V=1/N * (R)^2/3 * (I)^1/2 A= 3.14*0.4^2/4',calc:false},
+  {id:77,subject:3,exam:'2022-03',text:'하수도 관로의 접합방법 중 아래 설명에 해당되는 것은?',choices:['수면접합','관저접합','동수접합','관정접합'],answer:0,explain:'360*0.1*0.04*(100/28)=5.14 반송율(%) = 3000/(8000-3000)*100 = 60(%) 반송율 = 3000/(8000-3000) = 0.6',calc:false},
+  {id:78,subject:3,exam:'2022-03',text:'수은계 폐수 처리방법으로 틀린 것은?',choices:['수산화물침전법','흡착법','이온교환법','황화물침전법'],answer:0,explain:'무기수은계 폐수처리방법 : 아말감법, 흡착법, 이온교환법, 황화물침전법 유기수은계 폐수처리방법 : 산화분해법',calc:false},
+  {id:79,subject:3,exam:'2022-03',text:'생물학적 질소, 인 처리공정인 5단계 Bardenpho 공법에 관한 설명으로 틀린 것은?',choices:['폐슬러지내의 인의 농도가 높다.','1차 무산소조에서는 탈질화 현상으로 질소 제거가 이루어진다.','호기성조에서는 질산화와 인의 방출이 이루어진다.','2차 무산소조에서는 잔류 질산성질소가 제거된다.'],answer:2,explain:'호기성조에서 인의 과잉 흡수 및 질산화 3V * (100 - 98 ) = V * ( 100 - P )',calc:false},
+  {id:80,subject:3,exam:'2022-03',text:'활성슬러지 공법으로 폐수를 처리할 경우 산소요구량 결정에 중요한 인자가 아닌 것은?',choices:['유입수의 BOD와 처리수의 BOD','포기시간과 고형물 체류시간','포기조 내의 MLSS 중 미생물 농도','유입수의 SS와 DO'],answer:3,explain:'1/SRT 공식 참조',calc:false},
+  {id:81,subject:3,exam:'2022-03',text:'질소 제거를 위한 파괴점 염소 주입법에 관한 설명과 가장 거리가 먼 것은?',choices:['적절한 운전으로 모든 암모니아성 질소의 산화가 가능하다.','시설비가 낮고 기존 시설에 적용이 용이하다.','수생생물에 독성을 끼치는 잔류염소농도가 높아진다.','독성물질과 온도에 민감하다.'],answer:3,explain:'파과점 염소 주입법은 독성과 온도에 민감하지 않다.',calc:false},
+  {id:82,subject:3,exam:'2022-03',text:'정수장에 적용되는 완속여과의 장점이라 볼 수 없는 것은?',choices:['여과시스템의 신뢰성이 높고 양질의 음용수를 얻을 수 있다.','수량과 탁질의 급격한 부하변동에 대응할 수 있다.','고도의 지식이나 기술을 가진 운전자를 필요로 하지 않고 최소한의 전력만 필요로 한다.','여과지를 간헐적으로 사용하여도 양질의 여과수를 얻을 수 있다.'],answer:3,explain:'완속여과는 표면층에 있는 미생물의 작용으로 처리하는 것인데 간헐적으로 사용하게 되면 미생물의 처리 기능이 떨어지게 되므로 여과수의 수질이 저하된다.',calc:false},
+  {id:83,subject:3,exam:'2022-03',text:'생물학적 질소, 인제거를 위한 A2/O 공정 중 호기조의 역할로 옳게 짝지은 것은?',choices:['질산화, 인방출','질산화, 인흡수','탈질화, 인방출','탈질화, 인흡수'],answer:1,explain:'A2/O공정: 혐기조/무산소조/호기조 혐기조 -> 인 방출 무산소조 -> 탈질화 호기조 -> 질산화, 인 섭취(인 흡수)',calc:false},
+  {id:84,subject:3,exam:'2022-03',text:'생물학적 처리 중 호기성 처리법이 아닌 것은?',choices:['활성슬러지법','혐기성소화법','산화지법','살수여상법'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:85,subject:3,exam:'2022-03',text:'초심층포기법(Deep Shaft Aeration System)에 대한 설명 중 틀린 것은?',choices:['기포와 미생물이 접촉하는 시간이 표준활성슬러지법 보다 길어서 산소전달 효율이 높다.','순환류의 유속이 매우 빠르기 때문에 난류상태가 되어 산소전달율을 증가시킨다.','F/M비는 표준활성슬러지공법에 비하여 낮게 운전한다.','표준활성슬러지공법에 비하여 MLSS 농도를 높게 운전한다.'],answer:2,explain:'소요 면적이 적다 산소전달율이 높다 높은 F/M비로 운전 MLSS농도도 활성슬러지에 비해 높다',calc:false},
+  {id:86,subject:3,exam:'2022-03',text:'자외선 살균효과가 가장 높은 파장의 범위(mm)는?',choices:['680~710','510~530','250~270','180~200'],answer:0,explain:'자외선 살균 효과가 가장 높은 파장 범위는 250~260nm 입니다. 이 범위는 미생물의 DNA에 흡수되어 D NA 손상을 일으켜 살균 효과를 나타냅니다 6NO3^-1 + 2CH3OH → 6NO2^- + 2CO2 + 4H2O 6NO2^- + 3CH3OH → 3N2+ 3CO2 + 3H2O + 6OH^-',calc:false},
+  {id:87,subject:3,exam:'2022-03',text:'흡착장치 중 고정상 흡착장치의 역세척에 관한 설명으로 가장 알맞은 것은?',choices:['㉠ 24시간, ㉡ 14~48, ㉢ 25~30%','㉠ 24시간, ㉡ 24~28, ㉢ 10~50%','㉠ 10~15분, ㉡ 14~48, ㉢ 25~30%','㉠ 10~15분, ㉡ 24~28, ㉢ 10~50%'],answer:3,explain:'4번이 정답입니다.',calc:false},
+  {id:88,subject:4,exam:'2022-03',text:'침사지의 설치 목적으로 잘못된 것은?',choices:['펌프나 기계설비의 마모 및 파손방지','관의 폐쇄 방지','활성슬러지의 dead space 등에 사석이 쌓이는 것을 방지','침전지와 슬러지 소화조 내의 축적'],answer:3,explain:'20 * 0.9 = 25 * x, x = 0.72m/s 공식 대입 (0.9^2 - 0.72^2)/(2*9.8*0.7) = 0.0212 호수 중 인 농도 변화 250µg/L -> 40µg/L, 변화량 210µg/L,',calc:false},
+  {id:89,subject:4,exam:'2022-03',text:'노말핵산 추출물질의 정도관리로 맞는 것은?',choices:['정량한계는 0.5mg/L로 설정하였다.','상대표준편차가 ±35% 이내이면 만족한다.','정확도가 110%여서 재시험을 수행하였다.','정밀도가 10%여서 재시험을 수행하였다.'],answer:0,explain:'3. 정확도 75~125% 이내 4. 정밀도 25% 이내',calc:false},
+  {id:90,subject:4,exam:'2022-03',text:'투명도 측정에 관한 내용으로 틀린 것은?',choices:['투명도판(백색원판)의 지름인 30cm 이다.','투명도판에 뚫린 구멍의 지름은 5cm 이다.','투명도판에는 구멍이 8개 뚫려있다.','투명도판의 무게는 약 2kg 이다.'],answer:3,explain:'무게 3kg',calc:false},
+  {id:91,subject:4,exam:'2022-03',text:'노말 핵산 추출물질을 측정할대 시험과정 중 지시약으로 사용되는 것은?',choices:['메틸레드','메틸오렌지','메틸렌블루','페놀프탈레인'],answer:0,explain:'메틸오렌지 -> 노말 헥산 메틸블루 -> ABS음이온계면활성제 자외선/가시광선 분광법에 사용으로 비교해서 외워두기',calc:false},
+  {id:92,subject:4,exam:'2022-03',text:'수중 시안을 측정하는 방법으로 가장 거리가 먼 것은?',choices:['자외선/가시선 분광법','이온전극법','이온크로마토그래피법','연속흐름법'],answer:2,explain:'이온크로마토그래피: 시안(CN-) 제외한 음이온에 적용',calc:false},
+  {id:93,subject:4,exam:'2022-03',text:'시료의 전처리를 위한 산분해법 중 질산-과염소산법에 관한 설명으로 옳지 않은 것은?',choices:['과염소산을 넣을 경우 질산이 공존하지 않으면 폭발할 위험이 있으므로 반드시 질산을 먼저 넣어 주','납을 측정할 경우 과염소산에 따른 납 증기 발생으로 측정치에 손실을 가져온다.','유기물을 다량 함유하고 있으면서 산분해가 어려운 시료들에 적용한다.','유기물을 함유한 뜨거운 용액에 과염소산을 넣어서는 안 된다.'],answer:1,explain:'납을 측정할 경우에 황산이온이 다량 존재하면 불용성의 황산납이 생성되어 측정값에 손실을 가져온다.',calc:false},
+  {id:94,subject:4,exam:'2022-03',text:'물 1L에 NaOH 0.8g이 용해되었을 때의 농도(몰)은?',choices:['0.1','0.2','0.01','0.02'],answer:3,explain:'0.8g/40(g/mol)=0.02M',calc:false},
+  {id:95,subject:4,exam:'2022-03',text:'이온전극법에 대한 설명으로 틀린 것은?',choices:['시료용액의 교반은 이온전극의 응답속도는 이외의 전극범위, 정량한계값에는 영향을 미치지 않는다.','전극과 비교전극을 사용하여 전위를 측정하고 그 전위차로부터 정량하는 방법이다.','이온전극법에 사용하는 장치의 기본구성은 비교전극, 이온전극, 자석교반기, 저항 전위계, 이온측정','이온전극의 종류에는 유리막 전극, 고체막 전극, 격막형 전극이 있다.'],answer:0,explain:'시료용액의 교반은 이온전극의 전극범위, 응답속도, 정량한계값에 영향을 나타낸다. 그러므로 측정에 방해되지 않는 범위내에서 세게 일정한 속도로 교반해야 한다.',calc:false},
+  {id:96,subject:4,exam:'2022-03',text:'분원성 대장균군(시험관법)측정에 관한 내용으로 틀린 것은?',choices:['분원성 대장균군 시험은 추정시험과 확정시험으로 한다.','최적확수시험 결과는 분원성 대장균수는/1000mL로 표시한다.','확정시험에서 가스가 발생한 시료는 분원성 대장균군 양성으로 판정한다.','분원성 대장균군은 온혈동물의 배성물에서 발견된 그람음성·무아포성의 간균으로서 44.5℃에서 락'],answer:1,explain:'분원성 대장균수는/100mL로 표시',calc:false},
+  {id:97,subject:4,exam:'2022-03',text:'용존산소의 정량에 관한 설명으로 틀린 것은?',choices:['전극법은 산화성물질이 함유된 시료나 착색된 시료에 적합하다.','일반적으로 온도가 일정할때 용존산소 포화량은 수중의 염소이온량이 클수록 크다.','시료가 착색, 현탁된 경우는 시료에 칼륨명반 용액과 암모니아수를 주입한다.','Fe(Ⅲ) 100~200mg/L가 함유되어 있는 시료의 경우 황산을 첨가하기 전에 플루오린화칼륨용액 1'],answer:2,explain:'용존산소 포화량은 수중의 염소이온량과 반비례한다 관내 유량측정방법들 중 벤튜리미터, 노즐, 오리피스의 최대유량에 대한 최소유량의 범위가 동일하게 4: 1 최소값은 피토우관의 3:1',calc:false},
+  {id:98,subject:4,exam:'2022-03',text:'기체크로마토그래피를 적용한 알킬수은 정량에 관한 내용으로 틀린 것은?',choices:['검출기는 전자포획형 검출기를 사용하고 검출기의 온도는 140~200℃로 한다.','정량한계는 0.0005 mg/L 이다.','알킬수은화합물을 사염화탄소로 추출한다.','정밀도(% RSD)는 ±25% 이다.'],answer:2,explain:'벤젠으로 추출한다.',calc:false},
+  {id:99,subject:4,exam:'2022-03',text:'자외선/가시선을 이용한 음이온 계면활성제 측정에 관한 내용으로 ( ) 에 옳은 내용은?',choices:['㉠ 메틸레드, ㉡ 적색','㉠ 메틸렌레드, ㉡ 적자색','㉠ 메틸오렌지, ㉡ 황색','㉠ 메틸레블루, ㉡ 청색'],answer:3,explain:'식물성 플랑크톤은 즉시 분석 또는 포르말린용액을 시료의 3~5% 가하거나 글루타르알데하이드 또는 루 골용액을 시료의 1~2% 가하여 냉암소보관을 합니다.',calc:false},
+  {id:100,subject:4,exam:'2022-03',text:'염소이온 측정방법 중 질산은 적정법의 정량한계(mg/L)는?',choices:['0.1','0.3','0.5','0.7'],answer:3,explain:'4번이 정답입니다.',calc:true},
+  {id:101,subject:4,exam:'2022-03',text:'수질분석을 위한 시료 채취 시 유의사항으로 옳지 않은 것은?',choices:['채취용기는 시료를 채우기 전에 맑은 물로 3회 이상 씻은 다음 사용한다.','용존가스, 환원성 물질, 휘발성 유기물질 등의 측정을 위한 시료는 운반중 공기와의 접촉이 없도록','지하수 시료는 취수정 내에 고여 있는 물을 충분히 퍼낸(고여 있는 물의 4~5배 정도이나 pH 및 전기','시료채취량은 시험항목 및 시험횟수에 따라 차이가 있으나 보통 3~5L 정도이어야 한다.'],answer:0,explain:'시료로 3회 이상 씻은 다음 사용한다.',calc:false},
+  {id:102,subject:4,exam:'2022-03',text:'기체크로마토그래피법의 전자포획검출기에 관한 설명으로 ( ) 에 알맞은 것은?',choices:['α(알파)선','β(베타)선','γ(감마)선','중성자선'],answer:1,explain:'α(알파)선: He2+(헬륨 원자핵) β(베타)선: e-(전자) γ(감마)선: 전자기파의 일종',calc:false},
+  {id:103,subject:1,exam:'2021-08',text:'하수도법에서 사용하는 용어에 대한 정의가 틀린 것은?',choices:['분뇨는 수거식 화장실에서 수거되는 액체성 또는 고체성의 오염물질이다.','합류식하수관로는 오수와 하수도로 유입되는 빗물·지하수가 함께 흐르도록 하기 위한 하수관로이다.','분뇨처리시설은 분뇨를 침전·분해 등의 방법으로 처리하는 시설이다.','배수구역은 하수를 공공하수처리시설에 유입하여 처리할 수 있는 지역이다.'],answer:2,explain:'배수구역 : 공공하수도에 의하여 하수를 유출시킬 수 있는 지역 4번 설명은 하수처리구역 (시도지사) 수립 ㅡ 계획 내용 할당',calc:false},
+  {id:104,subject:1,exam:'2021-08',text:'미생물 영양원 중 유황(sulfur)에 관한 설명으로 틀린 것은?',choices:['황환원세균은 편성 혐기성 세균이다.','유황을 함유한 아미노산은 세포 단백질의 필수 구성원이다.','미생물세포에서 탄소 대 유황의 비는 100:1 정도이다.','유황고정, 유황화합물 환원, 산화 순으로 변환된다.'],answer:2,explain:'4. 환원, 산화, 유황고정의 순으로 변환과정을 거친다. D = 0.1*20/(0.2-0.1)*(10^-0.1*3 - 10^-0.2*3)+(9-5)*10^-0.2*3 = 6.00mg/L 3일 후 DO(mg/L) = 9-6 = 3mg/L NBDICOD=ICOD-BDICOD=ICOD-IBODu',calc:false},
+  {id:105,subject:1,exam:'2021-08',text:'이상적 완전혼합형 반응조내 흐름(혼합)에 관한 설명으로 틀린 것은?',choices:['분산수(dispersion number)가 0에 가까울수록 완전혼합 흐름상태라 할 수 있다.','Morrill지수의 값이 클수록 이상적인 완전혼합 흐름상태에 가깝다.','분산(Variance)이 1일 때 완전혼합 흐름상태라 할 수 있다.','지체시간(lag time)이 0이다.'],answer:0,explain:'분산수가 0에 가까울 때가 아니라 무한대일 때 3000*0.3=900 3000*0.7*0.4=840 900+840=1740',calc:false},
+  {id:106,subject:1,exam:'2021-08',text:'Formaldehyde(CH2O) 500mg/L의 이론적 COD값(mg/L)은?',choices:['약 512','약 533','약 553','약 576'],answer:1,explain:'CH2O+O2->CO2+H2O 30:32=500:X X=500*32/30=533.33',calc:true},
+  {id:107,subject:1,exam:'2021-08',text:'담수와 해수에 대한 일반적인 설명으로 틀린 것은?',choices:['해수의 용존산소 포화도는 주로 염류 때문에 담수보다 작다.','upwelling은 담수가 해수의 표면으로 상승하는 현상이다.','해수의 주성분으로는 Cl-, Na+, SO42- 등이 있다.','하구에서는 담수와 해수가 쐐기 형상으로 교차한다.'],answer:2,explain:'2. 담수가 아니라 비교적 찬 해수가 표층해수를 제치고 올라오는 현상 t=(378km*1000m/km)/(56m/min*1440min/day)=4.6875day BODt=BODu*10^(-kt)=280*10^(-0.1*4.6875)=95.15 우선 CH3COOH 몰농도부터 구하게 되면 3g/L = (3/60)mol/L = 0.05M',calc:false},
+  {id:108,subject:1,exam:'2021-08',text:'소수성 콜로이드의 특성으로 틀린 것은?',choices:['물과 반발하는 성질을 가진다.','물속에 현탁상태로 존재한다.','아주 작은 입자로 존재한다.','염에 큰 영향을 받지 않는다.'],answer:3,explain:'소수성 콜로이드는 염에 민감하다. (친수성 콜로이드와 반대)',calc:false},
+  {id:109,subject:1,exam:'2021-08',text:'연속류 교반 반응조(CFSTR)에 관한 내용으로 틀린 것은?',choices:['충격부하에 강하다.','부하변동에 강하다.','유입된 액체의 일부분은 즉시 유출된다.','동일 용량 PFR에 비해 제거효율이 좋다.'],answer:2,explain:'같은 효율상에서 필요로하는 부피비를 구하게 되면 CMFR이 PFR보다 3.91배 더 차지한다. 따라서 동일 용량 시 PFR이 더 효율이 우수하다. 아질산은 생성된 뒤 빠른시간 내 질산으로 전환되므로 아질산이 제일 적다 *현장공기추출법',calc:false},
+  {id:110,subject:1,exam:'2021-08',text:'다음 유기물 1M이 완전산화될 때 이론적인 산소요구량(ThOD)이 가장 적은 것은?',choices:['C6H6','C6H12O6','C2H5OH','CH3COOH'],answer:0,explain:'C6H6+15/2O2->6CO2+3H2O C6H12O6+6O2->6CO2+6H2O C2H5OH+3O2->2CO2+3H2O CH3COOH+2O2->2CO2+2H2O',calc:false},
+  {id:111,subject:1,exam:'2021-08',text:'생물농축에 대한 설명으로 가장 거리가 먼 것은?',choices:['생물농축은 생태계에서 영양단계가 낮을수록 현저하게 나타난다.','독성물질 뿐 아니라 영양물질도 똑같이 물질 순환을 통해 축적될 수 있다.','생물체내의 오염물질 농도는 환경수중의 농도보다 일반적으로 높다.','생물체는 서식장소에 존재하는 물질의 필요 유무에 관계없이 섭취한다.'],answer:0,explain:'1. 높을수록 현저하게 나타난다.',calc:false},
+  {id:112,subject:2,exam:'2021-08',text:'해수의 HOLY SEVEN에서 가장 농도가 낮은 것은?',choices:['CI-','Mg2+','Ca2+','HCO3-'],answer:3,explain:'해수의 농도 순 Cl-  >  Na+  >  SO42-  >  Mg2+  >  Ca2+  >  K+  >  HCO3- 활발한 분해지대에서 곰팡이는 사라진다.',calc:false},
+  {id:113,subject:2,exam:'2021-08',text:'다음 중 생물막법과 가장 거리가 먼 것은?',choices:['살수여상법','회전원판법','접촉산화법','산화구법'],answer:3,explain:'생물학적 처리법은 크게 활성슬러지공법, 산화지법, 생물막공법으로 나뉘고 그 중 생물막 공법으로 살수 여상법, 회전원판법, 접촉산화법이 있다.',calc:false},
+  {id:114,subject:2,exam:'2021-08',text:'취수보의 위치와 구조 결정 시 고려할 사항으로 적절하지 않은 것은?',choices:['유심이 취수구에 가까우며, 홍수에 의한 하상변화가 적은 지점으로 한다.','홍수의 유심방향과 직각의 직선형으로 가능한 한 하천의 직선부에 설치한다.','고정보의 상단 또는 가동보의 상단 높이는 유하단면 내에 설치한다.','원칙적으로 철근콘크리트구조로 한다.'],answer:2,explain:'홍수시 유수가 안전하게 유하되게 하기 위해 유하단면 확보가 필요하므로 고정보의 상단 퐁이 또는 가동 보의 상단높이는 유하단면내에 설치하지 않는다.',calc:false},
+  {id:115,subject:2,exam:'2021-08',text:'하수의 배제방식 중 합류식에 관한 설명으로 틀린 것은?',choices:['관거내의 보수 : 폐쇄의 염려가 없다.','토지이용 : 기존의 측구를 폐지할 경우는 도로폭을 유효하게 이용할 수 있다.','관거오접 : 철저한 감시가 필요하다.','시공 : 대구경관거가 되면 좁은 도로에서의 매설에 어려움이 있다.'],answer:2,explain:'3. 분류식에 대한 설명',calc:false},
+  {id:116,subject:2,exam:'2021-08',text:'취수탑의 위치에 관한 내용으로 ( )에 옳은 것은?',choices:['1m','2m','3m','4m'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:117,subject:2,exam:'2021-08',text:'펌프의 캐비테이션이 발생하는 것을 방지하기 위한 대책으로 잘못된 것은?',choices:['펌프의 설치위치를 가능한 낮추어 가용유효흡입수두를 크게 한다.','흡입관의 손실을 가능한 작게 하여 가용유효흡입수두를 크게 한다.','펌프의 회전속도를 높게 선정하여 필요유효흡입수두를 크게 한다.','흡입측 밸브를 완전히 개방하고 펌프를 운전한다.'],answer:1,explain:'가용유효흡입수두 크게 필요유효흡입수두 작게 하수구용, 우수용 펌프는 사류펌프.',calc:false},
+  {id:118,subject:2,exam:'2021-08',text:'상수시설 중 배수시설을 설계하고 정비할 때에 설계상의 기본적인 사항 중 옳은 것은?',choices:['배수지의 용량은 시간변동조정용량, 비상시대처용량, 소화용수량 등을 고려하여 계획시간최대급수','배수관을 계획할 때에 지역의 특성과 상황에 따라 직결급수의 범위를 확대하는 것 등을 고려하여 최','배수본관은 단순한 수지상 배관으로 하지 말고 가능한 한 상호 연결된 관망형태로 구성한다.','배수지관의 경우 급수관을 분기하는 지점에서 배수관내의 최대정수압은 150kPa을 넘지 않도록 한'],answer:2,explain:'1. 배수지의 용량은 시간변동조정용량과 비상대처용량을 합하여 급수구역의 계획1일최대급수량의 12시 간분 이상을 표준으로 한다. 2. 배수관을 계획할 때에 ~ 등을 고려하여 최소동수압을 결정하며, 수압의 기준점은 지표면상으로 한다. 4. 배수관내의 최대정수압은 700kPa를 넘지 않도록 한다.',calc:false},
+  {id:119,subject:2,exam:'2021-08',text:'하수도 계획에 대한 설명으로 옳은 것은?',choices:['하수도 계획의 목표연도는 원칙적으로 30년으로 한다.','하수도 계획구역은 행정상의 경계구역을 중심으로 수립한다.','새로운 시가지의 개발에 따른 하수도계획구역은 기존시가지를 포함한 종합적인 하수도계획의 일환','하수처리구역의 경계는 자연유하에 의한 하수배제를 위해 배수구역 경계와 교차하도록 한다.'],answer:2,explain:'1. 하수도계획의 목표연도는 20년을 원칙으로 한다. 2. 하수도 계획구역은 원칙적으로 관할 행정구역 전체를 대상으로 하되, 지역조건을 고려하여 행정경계 이외 구역도 정한다. 3. 새로운 시가지의 개발에 따른 하수도계획구역은 기존시가지를 포함한 종합적인 하수도계획의 일환으',calc:false},
+  {id:120,subject:2,exam:'2021-08',text:'고도정수 처리 시 해당물질의 처리방법으로 가장 거리가 먼 것은?',choices:['pH가 낮은 경우에는 플록형성 후에 알칼리제를 주입하여 pH를 조정한다.','색도가 높을 경우에는 응집침전처리, 활성탄처리 또는 오존처리를 한다.','음이온 계면활성제를 다량 함유한 경우에는 응집 또는 염소처리를 한다.','원수 중에 불소가 과량으로 포함된 경우에는 응집처리, 활성알루미나, 골탄, 전해 등의 처리를 한다.'],answer:2,explain:'3. 음이온계면활성제는 활성탄여과처리',calc:false},
+  {id:121,subject:2,exam:'2021-08',text:'상수도 수요량 산정 시 불필요한 항목은?',choices:['계획1인1일 최대사용량','계획1인1일 평균급수량','계획1인1일 최대급수량','계획1인당 시간최대급수량'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:122,subject:2,exam:'2021-08',text:'정수시설인 배수지에 관한 내용으로 ( )에 옳은 내용은?',choices:['4시간분 이상','8시간분 이상','12시간분 이상','24시간분 이상'],answer:2,explain:'3번이 정답입니다.',calc:false},
+  {id:123,subject:2,exam:'2021-08',text:'계획우수량을 정할 때 고려하여야 할 사항 중 틀린 것은?',choices:['하수관거의 확률년수는 원칙적으로 10~30년으로 한다.','유입시간은 최소단위배수구의 지표면특성을 고려하여 구한다.','유출계수는 지형도를 기초로 답사를 통하여 충분히 조사하고 장래 개발계획을 고려하여 구한다.','유하시간은 최상류관거의 끝으로부터 하류관거의 어떤 지점까지의 거리를 계획유량에 대응한 유속'],answer:2,explain:'유출계수는 토지이용도별 기초유출계수로부터 총괄유수계수를 구하는 것을 원칙으로 한다. 면적 3.0km^2 = 300ha 유달시간 = 유입시간 + 유하시간, 유하시간 = 600m/1m/s = 600sec = 10min 유달시간 = 6min + 10min = 16min',calc:false},
+  {id:124,subject:2,exam:'2021-08',text:'활성슬러지법에서 사용하는 수중형 포기장치에 관한 설명으로 틀린 것은?',choices:['저속터빈과 압력튜브 혹은 보통관을 통한 압축공기를 주입하는 형식이다.','혼합정도가 좋으며 단위용량당주입량이 크다.','깊은 반응조에 적용하며 운전에 융통성이 있다.','송풍조의 규모를 줄일 수 있어 전기료가 적게 소요된다.'],answer:3,explain:'기어감속기와 송풍조가 소요되며 전기료가 많이 든다.',calc:false},
+  {id:125,subject:2,exam:'2021-08',text:'정수시설인 착수정의 용량기준으로 적절한 것은?',choices:['체류시간 : 0.5분 이상, 수심 : 2~4m 정도','체류시간 : 1.0분 이상, 수심 : 2~4m 정도','체류시간 : 1.5분 이상, 수심 : 3~5m 정도','체류시간 : 1.0분 이상, 수심 : 3~5m 정도'],answer:2,explain:'- 착수정은 2지 이상으로 분할하는 것이 원칙이나 분할하지 않는 경우에는 반드시 우회관을 설치하며 배 수설비를 설치 - 형상 : 직사각형, 원형 - 유입구에 제수밸브 등을 설치하며, 2~3실로 구분하는 것이 바람직',calc:false},
+  {id:126,subject:2,exam:'2021-08',text:'막여과시설에서 막모듈의 열화에 대한 내용으로 틀린 것은?',choices:['미생물과 막 재질의 자화 또는 분비물의 작용에 의한 변화','산화제에 의하여 막 재질의 특성변화나 분해','건조되거나 수축으로 인한 막 구조의 비가역적인 변화','응집제 투입에 따른 막모듈의 공급유로가 고형물로 폐색'],answer:3,explain:'4. 파울링에 대한 설명',calc:false},
+  {id:127,subject:3,exam:'2021-08',text:'정수시설인 하니콤방식에 관한 설명으로 틀린 것은? (단, 회전원판방식과 비교 기준)',choices:['체류시간 : 2시간 정도','손실수두 : 거의 없음','폭기설비 : 필요 없음','처리수조의 깊이 : 5~7m'],answer:3,explain:'하니콤방식은 폭기설비를 사용하지 않는 회전원판법과는 다르게 폭기설비가 필요하다. 유달시간 = 유입시간 + 유하시간 =   5분    + 1200m/(1m/sec) =   5분    + 20min = 25분',calc:false},
+  {id:128,subject:3,exam:'2021-08',text:'생물막을 이용한 하수처리방식인 접촉산화법의 설명으로 틀린 것은?',choices:['분해속도가 낮은 기질제거에 효과적이다.','난분해성물질 및 유해물질에 대한 내성이 높다.','고부하시에도 매체의 공극으로 인하여 폐쇄위험이 적다.','매체에 생성되는 생물량은 부하조건에 의하여 결정된다.'],answer:0,explain:'3. 고부하시 생물막 비대화로 접촉재가 막힐 수 있음 공정의 부피=길이*폭*깊이 =  2m^2*2m =  4m^3',calc:false},
+  {id:129,subject:3,exam:'2021-08',text:'혐기성 소화조 설계 시 고려해야 할 사항과 관계가 먼 것은?',choices:['소요산소량','슬러지 소화정도','슬러지 소화를 위한 온도','소화조에 주입되는 슬러지의 양과 특성'],answer:0,explain:'혐기성 공법 산소필요x 250일 동안 500개의 정화조에서 수거함으로 1일 2개의 정화조에서 슬러지 수거 기존 하수처리장 슬러지 농도 : 3800*0.22 = 836kg/m^3 정화조 수거량 : 3.8*6*2 = 45.6',calc:false},
+  {id:130,subject:3,exam:'2021-08',text:'막공법에 관한 설명으로 가장 거리가 먼 것은?',choices:['투석은 선택적 투과막을 통해 용액 중에 다른 이온, 혹은 분자 크기가 다른 용질을 분리시키는 것이','투석에 대한 추진력은 막을 기준으로 한 용질의 농도차이다.','한외여과 및 미여과의 분리는 주로 여과작용에 의한 것으로 역삼투현상에 의한 것이 아니다.','역삼투는 반투막으로 용매를 통과시키기 위해 동수압을 이용한다.'],answer:1,explain:'4. 정수압 이용 200mg/L = 200 * 10^-3g/L = 200 * 10^-3 * 10^3g/10^3L = 200 * 10^-3kg/m^3 Al2(SO4)3 최적주입농도 200 * 10^-3kg/m^3 * 유량 500m^3/day = 100kg/day Q=500m^3/day',calc:false},
+  {id:131,subject:4,exam:'2021-08',text:'정수장에서 사용하는 소독제의 특성과 가장 거리가 먼 것은?',choices:['미잔류성','저렴한 가격','주입조작 및 취급이 쉬울 것','병원성 미생물에 대한 효과적 살균'],answer:0,explain:'상수도를 통해 수돗물을 공급할 때, 인체에 유해하지 않을 정도의 염소를 잔류시켜 공급하는 과정에서의 오염을 방지한다. Q = A * V  A = L*B = 70m^2, 해당 면적은 여과지 1지당 면적. Q/V = 30000m^3/day / 120m/day = 250m^2',calc:false},
+  {id:132,subject:4,exam:'2021-08',text:'식물성 플랑크톤 시험 방법으로 옳은 것은? (단, 수질오염공정시험기준 기준)',choices:['현미경계수법','최적확수법','평판집락계수법','시험관정량법'],answer:2,explain:'3각웨어 유량(Q) = kh^(5/2) h = 웨어 수두, D = 밑면에서 절단 하부점까지 길이, B 수로의 폭 k = 81.2 + 0.24/0.25 + (8.4+12/(0.7)^(1/2))X(0.25/0.8-0.09)^2 = 83.3 Q = 83.3 X (0.25)^(5/2)= 2.6',calc:false},
+  {id:133,subject:4,exam:'2021-08',text:'기체크로마토그래피에 사용되는 운반기체 중 분리도가 큰 순서대로 나타낸 것은?',choices:['N2 ＞ He ＞ H2','He ＞ H2 ＞ N2','N2 ＞ H2 ＞ He','H2 ＞ He ＞ N2'],answer:2,explain:'분자량이 작을수록 분리도가 높다 생물화학적 산소요구량 = ((D1-D2) - (B1-B2)*f)*P P(희석배수) = 300/5 = 60 ((7.6-4.0)-(7.6-7.0)*1)*60 = 180',calc:false},
+  {id:134,subject:4,exam:'2021-08',text:'수질오염공정시험기준상 양극벗김전압전류법으로 측정하는 금속은?',choices:['구리','납','니켈','카드뮴'],answer:1,explain:'양극벗김전압전류법 : 수은, 아연, 납, 비소 측정가능 아세톤90%',calc:false},
+  {id:135,subject:4,exam:'2021-08',text:'질산성 질소의 정량시험 방법 중 정량범위가 0.1mg NO3-N/L가 아닌 것은?',choices:['이온크로마토그래피법','자외선/가시선 분광법(부루신법)','자외선/가시선 분광법(활성탄흡착법)','데발다합금 환원증류법(분광법)'],answer:2,explain:'활성탄흡착법은 0.3mg/L',calc:false},
+  {id:136,subject:4,exam:'2021-08',text:'전기전도도의 측정에 관한 설명으로 잘못된 것은?',choices:['온도차에 의한 영향은 ±5%/°C정도이며 측정결과값의 통일을 위하여 보정하여야 한다.','측정단위는 uS/cm로 한다.','전기전도도는 용액이 전류를 운반할 수 있는 정도를 말한다.','전기전도도 셀은 항상 수중에 잠긴 상태에서 보존하여야 하며, 정기적으로 점검한 후 사용한다.'],answer:2,explain:'편차 플러스마이너스 3% 이하 6가 크롬만 가능',calc:false},
+  {id:137,subject:4,exam:'2021-08',text:'백분율(W/V, %)의 설명으로 옳은 것은?',choices:['용액 100g 중의 성분무게(g)를 표시','용액 100mL 중의 성분용량(mL)을 표시','용액 100mL 중의 성분무게(g)를 표시','용액 100g 중의 성분용량(mL)을 표시'],answer:2,explain:'3번이 정답입니다.',calc:false},
+  {id:138,subject:4,exam:'2021-08',text:'수질측정기기 중에서 현장에서 즉시 측정하기 위한 것이 아닌 것은?',choices:['DO meter','pH meter','TOC meter','Thermometer'],answer:1,explain:'2m 미만이면 수심의 1/3만 2m 이상이면 수심의 1/3과 2/3에서 채수',calc:false},
+  {id:139,subject:1,exam:'2021-05',text:'오염총량관리 기본방침에 포함되어야 하는 사항으로 거리가 먼 것은?',choices:['오염총량관리 대상지역의 수생태계 현황 조사 및 수생태계 건강성 평가 계획','오염원의 조사 및 오염부하량 산정방법','오염총량관리의 대상 수질오염물질 종류','오염총량관리의 목표'],answer:2,explain:'1. 오염총량관리의 목표 2. 오염총량관리의 대상 수질오염물질 종류 3. 오염원의 조사 및 오염부하량 산정방법 4. 오염총량관리기본계획의 주체, 내용, 방법 및 시한',calc:false},
+  {id:140,subject:1,exam:'2021-05',text:'자당(sucrose, C12H22O11)이 완전히 산화될 때 이론적인 ThOD/TOC 비는?',choices:['2.67','3.83','4.43','5.68'],answer:3,explain:'C12H22O11 + 12O2 → 12CO2 +11H2O 따라서 ThOD/TOC = 12 * 32 / 12 * 12 =2.67 1925년에 Streeter and Phelps는 용존산소 “sag curve”에 관한 근본적인 연구를 발표하였다. 그들은 용존',calc:false},
+  {id:141,subject:1,exam:'2021-05',text:'해양오염에 관한 설명으로 가장 거리가 먼 것은?',choices:['육지와 인접해 있는 대륙붕은 오염되기 쉽다.','유류오염은 산소의 전달을 억제한다.','원유가 바다에 유입되면 해면에 엷은 막을 형성하며 분산된다.','해수 중에서 오염물질의 확산은 일반적으로 수직방향이 수평방향보다 더 빠르게 진행된다.'],answer:3,explain:'수직방향으로는 중간에 수온약층이 있어 안정하기 대문에 수평방향으로의 확산이 더 빠릅니다.',calc:false},
+  {id:142,subject:1,exam:'2021-05',text:'유기화합물이 무기화합물과 다른 점을 올바르게 설명한 것은?',choices:['유기화합물들은 대체로 이온반응보다는 분자반응을 하므로 반응속도가 느리다.','유기화합물들은 대체로 분자반응보다는 이온반응을 하므로 반응속도가 느리다.','유기화합물들은 대체로 이온반응보다는 분자반응을 하므로 반응속도가 빠르다.','유기화합물들은 대체로 분자반응보다는 이온반응을 하므로 반응속도가 빠르다.'],answer:0,explain:'유기화합물 → 분자반응 → 느린 반응속도 (유유자적~) 무기화합물 → 이온반응 → 빠른 반응속도 (무지 빠름!)',calc:false},
+  {id:143,subject:1,exam:'2021-05',text:'약산인 0.01N-CH3COOH가 18%해리될 때 수용액의 pH는?',choices:['약 2.15','약 2.25','약 2.45','약 2.75'],answer:3,explain:'PH = -log[H+] 0.01*(CH3COOH <=> CH3COO-   +   H+) 18% 해리의 경우 0.01(1-0.18) CH3COO  <=> 0.01*0.18 CH3COO-    +   0.01*0.18 H+',calc:false},
+  {id:144,subject:1,exam:'2021-05',text:'식물과 조류세포의 엽록체에서 광합성의 명반응과 암반응을 담당하는 곳은?',choices:['틸라코이드와 스트로마','스트로마와 그라나','그라나와 내막','내막과 외막'],answer:2,explain:'틸라코이드 - 명반응 스트로마   - 암반응 Carlson 지수는 1. 엽록소 a 농도(Chlorophyll-a)',calc:false},
+  {id:145,subject:1,exam:'2021-05',text:'광합성의 영향인자와 가장 거리가 먼 것은?',choices:['빛의 강도','빛의 파장','온도','O2 농도'],answer:2,explain:'o2농도는 광합성후 생성 규조류에 대한 설명이다. 규조류는 봄, 가을에는 급성장을 보여 호수와 성층현상에 관련이 있고 단세포이며 드물게 군락을 이루고 있는 경우도 있다.',calc:false},
+  {id:146,subject:1,exam:'2021-05',text:'물의 특성에 관한 설명으로 틀린 것은?',choices:['수소와 산소의 공유결합 및 수소결합으로 되어 있다.','수온이 감소하면 물의 점성도가 감소한다.','물의 점성도는 표준상태에서 대기의 대략 100배 정도이다.','물분자 사이의 수소결합으로 큰 표면장력을 갖는다.'],answer:1,explain:'물의 온도 증가 -> 물의 점성도 감소 -> 증발 반대로 수온이 내려가면 물의 점성도는 증가하게 됨.',calc:false},
+  {id:147,subject:1,exam:'2021-05',text:'자연계 내에서 질소를 고정할 수 있는 생물과 가장 거리가 먼 것은?',choices:['Blue green algae','Rhizobium','Azotobacter','Flagellates'],answer:0,explain:'Flagellates : 편모충류 ln0.5=-2k k=ln0.5/-2 = 0.35 ln 5000/20=-0.35t',calc:false},
+  {id:148,subject:1,exam:'2021-05',text:'보통 농업용수의 수질평가 시 SAR로 정의하는데 이에 대한 설명으로 틀린 것은?',choices:['SAR값이 20정도이면 Na+가 토양에 미치는 영향이 적다.','SAR의 값은 Na+, Ca2+, Mg+2 농도와 관계가 있다.','경수가 연수보다 토양에 더 좋은 영향을 미친다고 볼 수 있다.','SAR의 계산식에 사용되는 이온의 농도는 meq/L를 사용한다.'],answer:0,explain:'SAR값이 18~26이면 비교적 높다.',calc:false},
+  {id:149,subject:1,exam:'2021-05',text:'분뇨에 관한 설명으로 옳지 않은 것은?',choices:['분뇨는 다량의 유기물과 대장균을 포함하고 있다.','도시하수에 비하여 고형물 함유도와 점도가 높다.','분과 뇨의 혼합비는 1:10이다.','분과 뇨의 고형물비는 약 1:1이다.'],answer:3,explain:'분과 뇨의 고형물비는 약 7:1이다. CH2(NH2)COOH + 1.5O2 = 2CO2 + NH3 + H2O NH3 + 2O2 = HNO3 + H2O 두 가지 반응식에 들어가는 O2 는 (1.5+2) * 3mol = 10.5mol O2',calc:false},
+  {id:150,subject:1,exam:'2021-05',text:'해수에 관한 다음의 설명 중 옳은 것은?',choices:['해수의 중요한 화학적 성분 7가지는 Cl-, Na+, Mg2+, SO42-, HCO3-, K+, Ca2+이다.','염분은 적도해역에서 낮고 남북 양극해역에서 높다.','해수의 Mg/Ca비는 담수보다 작다.','해수의 밀도는 수심이 깊을수록 염농도가 감소함에 따라 작아진다.'],answer:0,explain:'2. 염분은 무역풍대 ＞ 적도해역 ＞ 극지방 3. 해수의 Mg/Ca비는 3~4로 담수보다 크다. 4. 해수의 밀도는 수심이 깊을수록 염농도가 증가함에 따라 커진다.',calc:false},
+  {id:151,subject:2,exam:'2021-05',text:'아세트산(CH3COOH) 120mg/L 용액의 pH는? (단, 아세트산 Ka=1.8×10-5)',choices:['4.65','4.21','3.72','3.52'],answer:2,explain:'120mg=0.12g 0.12÷60= 0.002 x^2/0.002=1.8×10^-5 x=1.897×10^-4 -log(1.897×10^-4)=3.722',calc:true},
+  {id:152,subject:2,exam:'2021-05',text:'상수시설 중 도수거에서의 최소유속(m/sec)은?',choices:['0.1','0.3','0.5','1.0'],answer:2,explain:'상수도 시설 도수거의 최소, 최대 유속은 0.3~3m/s 부대장치가 많음',calc:false},
+  {id:153,subject:2,exam:'2021-05',text:'응집지(정수시설)내 급속혼화시설의 급속혼화방식과 가장 거리가 먼 것은?',choices:['공기식','수류식','기계식','펌프 확산에 의한 방법'],answer:0,explain:'급속 혼화방식 : 수류식, 기계식 및 펌프 확산에 의한 방법',calc:false},
+  {id:154,subject:2,exam:'2021-05',text:'하수 고도처리를 위한 급속여과법에 관한 설명과 가장 거리가 먼 것은?',choices:['여층의 운동방식에 의해 고정상형 및 이동상형으로 나눌 수 있다.','여층의 구성은 유입수와 여과수의 수질, 역세척 주기 및 여과면적을 고려하여 정한다.','여과속도는 유입수와 여과수의 수질, SS의 포획능력 및 여과지속시간을 고려하여 정한다.','여재는 종류, 공극률, 비표면적, 균등계수 등을 고려하여 정한다.'],answer:1,explain:'하수 고도처리 급속여과법에서 여층의 구성은 여층의 형태에 따라 다르게 고려하며, 주로 모래, 안트라 사이트를 사용',calc:false},
+  {id:155,subject:2,exam:'2021-05',text:'상수의 취수시설에 관한 설명 중 틀린 것은?',choices:['최수탑은 탑의 설치 위치에서 갈수 수심이 최소 2m이상이어야 한다.','취수보의 취수구의 유입 유속은 1m/sec이상이 표준이다.','취수탑의 취수구 단면형상은 장방형 또는 원형으로 한다.','취수문을 통한 유입속도가 0.8m/sec 이하가 되도록 취수문의 크기를 정한다.'],answer:1,explain:'취수구 유입유속 0.4 ~ 0.8 m/s',calc:false},
+  {id:156,subject:2,exam:'2021-05',text:'상수처리시설인 침사지의 구조 기준으로 틀린 것은?',choices:['표면부하율은 200~500mm/min을 표준으로 한다.','지내 평균유속은 30cm/sec를 표준으로 한다.','지의 상단높이는 고수위보다 0.6~1m의 여유고를 둔다.','지의 유효수심은 3~4m를 표준으로 한다.'],answer:1,explain:'지내 평균유속은 2~7cm/sec를 표준으로 한다 매설깊이 5M',calc:false},
+  {id:157,subject:2,exam:'2021-05',text:'계획오수량에 대한 설명 중 올바르지 않은 것은?',choices:['합류식에서 우천 시 계획오수량은 원칙적으로 계획시간최대오수량의 3배이상으로 한다.','계획1일최대오수량은 1인1일평균오수량에 계획인구를 곱한 후, 여기에 공장폐수량, 지하수량 및 기','계획1일평균오수량은 계획1일최대오수량의 70~80%를 표준으로 한다.','계획시간최대오수량은 계획1일 최대오수량의 1시간당 수량의 1.3~1.8배를 표준으로 한다.'],answer:3,explain:'계획1일최대오수량은 "1인1일최대오수량"에 계획인구를 곱한 후, 여기에 공장폐수량, 지하수량 및 기타 배수량을 더한 것으로 한다. x=73000(1+0.05)^20',calc:false},
+  {id:158,subject:2,exam:'2021-05',text:'해수담수화를 위해 해수를 취수할 때 취수위치에 따른 장ㆍ단점으로 틀린 것은?',choices:['해중취수(10m 이상): 기상변화, 해조류의 영향이 적다.','해안취수(10m 이내): 계절별 수질, 수온 변화가 심하다.','염지하수 취수: 추가적 전처리 비용이 발생한다.','해안치수(10m 이내): 양적으로 가장 경제적이다.'],answer:2,explain:'염지하수는 취수후 추가적인 비용이 발생하지 않는다.',calc:false},
+  {id:159,subject:2,exam:'2021-05',text:'펌프의 캐비테이션이 발생하는 것을 방지하기 위한 대책으로 볼 수 없는 것은?',choices:['펌프의 설치위치를 가능한 한 높게 하여 펌프의 필요유효흡입수두를 작게 한다.','펌프의 회전속도를 낮게 선정하여 펌프의 필요유효흡입수두를 작게 한다.','흡입관의 손실을 가능한 한 작게 하여 펌프의 가용유효흡입수두를 크게 한다.','흡입측 밸브를 완전히 개방하고 펌프를 운전한다.'],answer:1,explain:'공동현상 방지대책 - 펌프설치 위치는 낮게 필요유효 흡입수두는 작게 - 펌프 회전속도는 낮게 필요유효 흡입수두는 작게 - 흡인관 손실 가능한 작게 가용유효 흡입수는 크게',calc:false},
+  {id:160,subject:2,exam:'2021-05',text:'오수관거를 계획할 때 고려할 사항으로 맞지 않는 것은?',choices:['분류식과 합류식이 공존하는 경우에는 원칙적으로 양 지역의 관거는 분리하여 계획한다.','관거는 원칙적으로 암거로 하며, 수밀한 구조로 하여야 한다.','관거단면, 형상 및 경사는 관거 내에 침전물이 퇴적하지 않도록 적당한 유속을 확보한다.','관거의 역사이펀이 발생하도록 계획한다.'],answer:3,explain:'관거의 역사이펀은 발생하지 않도록 한다',calc:false},
+  {id:161,subject:2,exam:'2021-05',text:'펌프의 특성곡선에서 펌프의 양수량과 양정간의 관계를 가장 잘 나타낸 곡선은?',choices:['a 곡선','b 곡선','c 곡선','d 곡선'],answer:3,explain:'유달시간 t = 유입시간 + 유하시간, 유입시간 180 sec = 3min 유하시간 = 관거길이 1000m/(33m/min) = 30.3min, 총 유달시간 t = 33.3min 강우강도 I = 3970/33.3 + 31 mm/hr = 61.74mm/hr 면적 A 3.0km^2 = 300ha',calc:false},
+  {id:162,subject:2,exam:'2021-05',text:'하수도계획 수립 시 포함되어야 하는 사항과 가장 거리가 먼 것은?',choices:['침수방지계획','슬러지 처리 및 자원화 계획','물관리 및 재이용계획','하수도 구축지역 계획'],answer:3,explain:'1. 침수방지계획 2. 슬러지 처리 및 자원화 계획 3, 물관리 및 재이용계획 4. 수질보전 계획',calc:false},
+  {id:163,subject:2,exam:'2021-05',text:'정수시설인 완속여과지에 관한 내용으로 옳지 않은 것은?',choices:['주위벽 상단은 지반보다 60cm 이상 높여 여과지 내로 오염수나 토사 등의 유입을 방지한다.','여과속도는 4~5m/day를 표준으로 한다.','모래층의 두께는 70~90cm를 표준으로 한다.','여과면적은 계획정수량을 여과속도로 나누어 구한다.'],answer:3,explain:'급속여과 완속여과 비교 급속여과 여과속도 120~140m/day 완속여과 여과속도 4~5m/day 급속여과 모래층 두께 60~70cm(최대 120cm)',calc:false},
+  {id:164,subject:2,exam:'2021-05',text:'하수시설인 중력식침사지에 대한 설명 중 옳은 것은?',choices:['체류시간은 3~6분을 표준으로 한다.','수심은 유효수심에 모래퇴적부의 깊이를 더한 것으로 한다.','오수침사지의 표면부하율은 3600m3/m2-day정도로 한다.','우수침사지의 표면부하율은 1800m3/m2-day정도로 한다.'],answer:1,explain:'1. 중력식 침사지 체류시간 30~60초',calc:false},
+  {id:165,subject:3,exam:'2021-05',text:'펌프를 선정할 때 고려 사항으로 적당하지 않은 것은?',choices:['펌프를 최대효율점 부근에서 운전하도록 용량 및 대수를 결정한다.','펌프의 설치대수는 유지관리상 가능한 적게하고 동일용량의 것으로 한다.','펌프는 저용량일수록 효율이 높으므로 가능한 저용량으로 한다.','내부에서 막힘이 없고, 부식 및 마모가 적어야 한다.'],answer:3,explain:'펌프는 고용량일수록 효율이 높고 가능한 고용량으로 한다. (1) 물에 대한 부피를 구함 (2) 조내 기포의 갯수 * 기포의 표면적 * 기포의 체류시간 곱 (2)/(1) 을 하면 됨',calc:false},
+  {id:166,subject:3,exam:'2021-05',text:'다음 조건과 같이 혐기성 반응을 시킬 때 세포생산량(kg 세포/day)은?',choices:['84','182','215','334'],answer:2,explain:'먼저 1/SRT 공식을 이용해 X x V 구한후 그냥 XrQw 구하면 되네요',calc:true},
+  {id:167,subject:3,exam:'2021-05',text:'응집과정 중 교반의 영향에 관한 설명으로 알맞지 않은 것은?',choices:['교반에 따른 응집효과는 입자의 농도가 높을수록 좋다.','교반에 따른 응집효과는 입자의 지름이 불균일할수록 좋다.','교반을 위한 동력은 응결지 부피와 비례한다.','교반을 위한 동력은 속도경사와 반비례한다.'],answer:2,explain:'동력은 속도경사의 제곱에 비례한다 0.63*4000(200-180)-0.05*1000*3000*0.75=341,100 341,100/1000=341.1 직경 3.2mm → 3.2*10^-3m',calc:false},
+  {id:168,subject:3,exam:'2021-05',text:'생물학적 폐수처리공정에서 생물 반응조에 슬러지를 반송시키는 주된 이유는?',choices:['폐수처리에 필요한 미생물을 공급하기 위하여','폐수에 들어있는 독성물질을 중화시키기 위하여','활성슬러지가 자라는데 필요한 영양소를 공급하기 위하여','슬러지처리공정으로 들어가는 잉여슬러지의 양을 증가시키기 위하여'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:169,subject:3,exam:'2021-05',text:'연속회분식(SBR)의 운전단계에 관한 설명으로 틀린 것은?',choices:['주입: 주입단계 운전의 목적은 기질(원폐수 또는 1차 유출수)을 반응조에 주입하는 것이다.','주입: 주입단계는 총 cycle 시간의 약 25% 정도이다.','반응: 반응단계는 총 cycle 시간의 약 65% 정도이다.','침전: 연속흐름식 공정에 비하여 일반적으로 더 효율적이다.'],answer:2,explain:'주입 : 25% 반응 : 35% 침전 : 20% 배출 : 15%',calc:false},
+  {id:170,subject:3,exam:'2021-05',text:'혐기성 소화조내의 pH가 낮아지는 원인이 아닌 것은?',choices:['유기물 과부하','과도한 교반','중금속 등 유해물질 유입','온도 저하'],answer:3,explain:'pH가 낮아지는 원인 1. 유기물 과부하 2. 중금속 등 유해물질 유입 3. 온도 저하 4. 교반 부족 시안을 함유한 폐수는 염소법, 오존산화법, 감청법(시안착염), 전해산화법, 전기투석법 등으로 처리할 수 있습니다.',calc:false},
+  {id:171,subject:4,exam:'2021-05',text:'상향류 혐기성 슬러지상(UASB)에 관한 설명으로 틀린 것은?',choices:['미생물 부착을 위한 여재를 이용하여 혐기성 미생물을 슬러지층으로 축적시켜 폐수를 처리하는 방식','수리학적 체류시간을 작게 할 수 있어 반응조 용량이 축소된다.','폐수의 성상에 의하여 슬러지의 입상화가 크게 영향을 받는다.','고형물의 농도가 높을 경우 고형물 및 미생물이 유실될 우려가 있다.'],answer:2,explain:'상향류 혐기성 슬러지상(UASB)의 특징 1. 기계적인 교반이나 여재가 필요없기 때문에 비용이 적게 든다. 2. 수리학적 체류시간을 작게 할 수 있어 반응조 용량이 축소된다. 3. 미생물 체류시간을 적절히 조절하면 저농도 유기성 폐수의 처리도 가능하다.',calc:false},
+  {id:172,subject:4,exam:'2021-05',text:'자외선/가기선 흡광광도계의 구성 순서로 가장 적합한 것은?',choices:['광원부 – 파장선택부 – 시료부 - 측광부','광원부 – 파장선택부 – 단색화부 - 측광부','시료도입부 – 광원부 – 파장선택부 - 측광부','시료도입부 – 광원부 – 검출부 – 측광부'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:173,subject:4,exam:'2021-05',text:'부유물질 측정 시 간섭물질에 관한 설명으로 틀린 것은?',choices:['증발잔류물이 1000mg/L 이상인 경우의 해수, 공장폐수 등은 특별히 취급하지 않을 경우, 높은 부유','5mm금속망을 통과시킨 큰 입자들은 부유 물질 측정에 방해를 주지 않는다.','철 또는 칼슘이 높은 시료는 금속침전이 발생하며 부유물질 측정에 영향을 줄 수 있다.','유지 및 혼합되지 않는 유기물도 여과지에 남아 부유물질 측정값을 높게 할 수 있다.'],answer:1,explain:'1. 증발잔류물이 1000mg/l 이상인 경우의 해수,공장폐수 등은 특별히 취급하지 않을 경우 높은 부유물질 값을 나타낼 수 있다. 이 경우 여과지를 여러번 세척한다 2. 나무조각, 큰 모래입자 등과 같은  큰 입자들은 부유물질 측정에 방해를 주며 이 경우 2mm금속망에 먼 저 통과시킨후 분석을 측정한다',calc:false},
+  {id:174,subject:4,exam:'2021-05',text:'수질분석용 시료 채취 시 유의사항과 가장 거리가 먼 것은?',choices:['시료 채취 용기는 시료를 채우기 전에 깨끗한 물로 3회 이상 씻은 다음 사용한다.','유류 또는 부유물질 등이 함유된 시료는 시료의 균일성이 유지될 수 있도록 채취하여야 하며 침전물','용존가스, 환원성 물질, 휘발성유기화합물, 냄새, 유류 및 수소이온 등을 측정하는 시료는 시료용기','시료 채취량은 보통 3~5L 정도이어야 한다.'],answer:2,explain:'물 → 시료로 3회이상 1) ELCD : 전해질 전도도 검출기 - electrolytic conductivity detector 2) ECD : 전자 포착 검출기',calc:false},
+  {id:175,subject:4,exam:'2021-05',text:'시료 보존 시 반드시 유리병을 사용하여야 하는 측정 항목이 아닌 것은?',choices:['노말핵산추출물질','음이온계면활성제','유기인','PCB'],answer:3,explain:'폴리에틸렌만 가능: 불소 유리병만: 노말핵산추출물질, 유기인, PCB, 페놀, 휘발성 유기화합물, 냄새, 물벼룩 갈색병만: 염화비닐, 다이옥신, 석유계 총탄화수소, 잔류염소, 다이에틸헥실프랄레이트 위에 적히지 않은 \'음이온계면활성제(ABS)는 폴리에틸렌, 유리병 사용 가능하므로 답은 2번입니다.',calc:false},
+  {id:176,subject:4,exam:'2021-05',text:'노말헥산 추출물질의 정량한계(mg/L)는?',choices:['0.1','0.5','1.0','5.0'],answer:0,explain:'세즈윅-라프터 챔버는 조작이 편리하고 재현성이 높은 반면, 증배율이상에서는 관찰이 어렵기 때문에 미 소 플랑크톤의 검경에는 적절하지 못하다',calc:true},
+  {id:177,subject:4,exam:'2021-05',text:'수질오염공정시험기준상 음이온 계면활성제 실험방법으로 옳은 것은?',choices:['자외선/가시선 분광법','원자흡수분광광도법','기체크로마토그래피법','이온전극법'],answer:0,explain:'음이온 계면활성제(흡광도 650nm)- 자외선/ 가시선 분광법 (정량한계 : 0.02) - 연속흐름법 (정량한계 : 0.09)',calc:false},
+  {id:178,subject:4,exam:'2021-05',text:'공정시험기준의 내용으로 가장 거리가 먼 것은?',choices:['온수는 60~70℃, 냉수는 15℃이하를 말한다.','방울수는 20℃에서 정제수 20방울을 적하할 때, 그 부피가 약 1mL가 되는 것을 뜻한다.','‘정밀히 단다’라 함은 규정된 수치의 무게를 0.1mg까지 다는 것을 말한다.','시험에 쓰는 물은 따로 규정이 없는 한 증류수 또는 정제수로 한다.'],answer:2,explain:'정밀히 단다: 규정된 양의 시료를 취하여 화학저울 또는 미량저울로 칭량함을 말한다. 정확히 단다: 규정된 수치의 무게를 0.1mg까지 다는 것을 말한다.',calc:false},
+  {id:179,subject:4,exam:'2021-05',text:'자외선/가시선 분광법을 적용한 크롬 측정에 관한 내용으로 ( )에 옳은 것은?',choices:['㉠ 과망간산칼륨, ㉡ 황색','㉠ 과망간산칼륨, ㉡ 적자색','㉠ 티오황산나트륨, ㉡ 적색','㉠ 티오황산나트륨, ㉡ 황갈색'],answer:1,explain:'Q=k(h)^(5/2) FeSO4 용액의 농도를 계산하면, NV = N’V’ (? N) (25 mL) = (0.1 N) (31.25 mL)',calc:false},
+  {id:180,subject:4,exam:'2021-05',text:'시료의 최대보존기간이 다른 측정 항목은?',choices:['시안','불소','염소이온','노말헥산추출물질'],answer:1,explain:'시안은 14일 나머지 불소, 염소이온, 노말핵산추출물은 28일',calc:false},
+  {id:181,subject:1,exam:'2021-03',text:'중권역 물환경관리계획에 관한 내용으로 ( )의 내용으로 옳은 것은?',choices:['㉠ 관계 시ㆍ도지사, ㉡ 지방환경관서의 장','㉠ 지방환경관서의 장, ㉡ 관계 시ㆍ도지사','㉠ 유역환경청장, ㉡ 지방환경관서의 장','㉠ 지방환경관서의 장, ㉡ 유역환경청장'],answer:0,explain:'1. 유역환경의 조사, 분석 자료 2. 오염원의 자연증감에 관한 분석 자료 3. 지역개발에 관한 과거와 장래의 계획에 관한 자료 4. 오염부하량의 산정에 사용한 자료',calc:false},
+  {id:182,subject:1,exam:'2021-03',text:'미생물 중 세균(Bacteria)에 관한 특징으로 가장 거리가 먼 것은?',choices:['원시적 엽록소를 이용하여 부분적인 탄소동화작용을 한다.','용해된 유기물을 섭취하며 주로 세포분열로 번식한다.','수분 80%, 고형물 20% 정도로 세포가 구성되며 고형물 중 유기물이 90%를 차지한다.','pH, 온도에 대하여 민감하며, 열보다 낮은 온도에서 저항성이 높다.'],answer:0,explain:'박테리아는 탄소동화작용을 하지 않고 유기탄소를 섭취하는 종속영양계이다.',calc:false},
+  {id:183,subject:1,exam:'2021-03',text:'하천 수질모델 중 WQRRS에 관한 설명으로 가장 거리가 먼 것은?',choices:['하천 및 호수의 부영양화를 고려한 생태계 모델이다.','유속, 수림, 조도계수에 의해 확산계수를 결정한다.','호수에는 수심별 1차원 모델이 적용된다.','정적 및 동적인 하천의 수질, 수문학적 특성이 광범위하게 고려된다.'],answer:3,explain:'2번은 QUAL-1의 내용임 SAR은 Na+,Mg2+,Ca2+와 관련있다.',calc:false},
+  {id:184,subject:1,exam:'2021-03',text:'다음이 설명하는 일반적 기체 법칙은?',choices:['라울트의 법칙','게이-루삭의 법칙','헨리의 법칙','그레함의 법칙'],answer:0,explain:'Raoult law: PA=yA*P=xA*PA(SAT)',calc:false},
+  {id:185,subject:1,exam:'2021-03',text:'우리나라의 수자원 이용현황 중 가장 많은 용도로 사용하는 용수는?',choices:['생활용수','공업용수','농업용수','유지용수'],answer:3,explain:'농업 > 유지 > 생활 > 공업 X/M=K×C^1/n 10-1/M=0.5×1^1/2 ∴M=18',calc:false},
+  {id:186,subject:1,exam:'2021-03',text:'원생동물(Protozoa)의 종류에 관한 내용으로 옳은 것은?',choices:['Paramecia는 자유롭게 수영하면서 고형물질을 섭취한다.','Vorticella는 불량한 활성슬러지에서 주로 발견된다.','Sarcodina는 나팔의 입에서 물흐름을 일으켜 고형물질만 걸러서 먹는다.','Suctoria는 몸통으로 움직이면서 위족으로 고형물질을 몸으로 싸서 먹는다.'],answer:0,explain:'3번은 stalked ciliates에 대한 내용 4번은 sarcodina에 대한 내용 suctoria는 입이 없고 분생 또는 아생에 의해 번식. 관같이 생긴 축수로 양분 섭취',calc:false},
+  {id:187,subject:1,exam:'2021-03',text:'다음 설명과 가장 관계있는 것은?',choices:['박테리아','균류','조류','원생동물'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:188,subject:1,exam:'2021-03',text:'산과 염기의 정의에 관한 설명으로 옳지 않은 것은?',choices:['Arrhenius는 수용액에서 수산화이온을 내어 놓는 물질을 염기라고 정의하였다.','Lewis는 전자쌍을 받는 화학종을 염기라고 정의하였다.','Arrhenius는 수용액에서 양성자를 내어 놓은 것을 산이라고 정의하였다.','Brӧnsted-Lowry는 수용액에서 양성자를 내어주는 물질을 산이라고 정의하였다.'],answer:2,explain:'Lewis는 전자쌍을 "받는(X) / 주는(O)" 화학종을 염기라고 정의 Lewis는 전자쌍을 받는 화학종을 "염기(X) / 산(O)" 이라고 정의 15000g * 0.082 L*atm/mol*K * (273+25)K / 4atm * 1mol/16g *1m3/1000L = 5.727 m3 C6H12O6⇔3CO2+3CH4',calc:false},
+  {id:189,subject:1,exam:'2021-03',text:'유기화합물에 대한 설명으로 옳지 않은 것은?',choices:['유기화합물들은 일반적으로 녹는 점과 끓는 점이 낮다.','유기화합물들은 하나이 분자식에 대하여 여러 종류의 화합물이 존재할 수 있다.','유기화합물들은 대체로 이온 반응보다는 분자반응을 하므로 반응속도가 빠르다.','대부분의 유기화합물은 박테리아의 먹이가 될 수 있다.'],answer:3,explain:'3. 유기화합물은 대체로 이온 반응보다는 분자반응을 하므로 반응속도가 느리다. 무기물=물과 친하지 않음 서스펜션,에멀션은 콜로이드의 상태이고 친수성 콜로이드는 물과 친한 콜로이드 이므로',calc:false},
+  {id:190,subject:1,exam:'2021-03',text:'열수 배출에 의한 피해현상으로 가장 거리가 먼 것은?',choices:['발암물질 생성','부영양화','용존산소의 감소','어류의 폐사'],answer:3,explain:'열수에는 용해된 미네랄이 풍부하여 부영양화 발생하게 된다. 비(소)피(부)더스 먹으면 흑(피증)색 똥나온다로 외우세요! 비소 - 피부점막, 피부염, 흑피증 2000 * 0.15 =300mg/L',calc:false},
+  {id:191,subject:1,exam:'2021-03',text:'수은주 높이 150mm는 수주로 몇 mm인가?',choices:['약 2040','약 2530','약 3240','약 3530'],answer:0,explain:'150mmHg x (10332.275mmH2O / 1atm) x ( 1atm / 760mmHg ) = 2039.26mmH2O Kt = K20 X 1.047^(t-20) k25 = 0.19 x 1.047^(25-20)=0.24 1. 수괴의 수직운동으로 수질은 악화되지만 전체 자정작용은 촉진',calc:true},
+  {id:192,subject:2,exam:'2021-03',text:'적조 현상에 관한 설명으로 틀린 것은?',choices:['수괴의 연직안정도가 작을 때 발생한다.','강우에 따른 하천수의 유입으로 해수의 염분량이 낮아지고 영양염류가 보급될 때 발생한다.','적조조류에 의한 아가미 폐색과 어류의 호흡장애가 발생한다.','수중 용존산소 감소에 의한 어패류의 폐사가 발생한다.'],answer:2,explain:'1. 수괴의 연직안정도가 클 때 발생한다. Q=1/360*C*I*A t=t1+t2=6min(t2=600m/(1m/sec)=600sec=10min) I=118.0645mm/hr',calc:false},
+  {id:193,subject:2,exam:'2021-03',text:'우수배제계획의 수립 중 우수유출량의 억제에 대한 계획으로 옳지 않은 것은?',choices:['우수유출량의 억제방법은 크게 우수저류형, 우수침투형 및 토지이용의 계획적관리로 나눌 수 있다.','우수저류형 시설 중 On-site 시설은 단지 내 저류, 우수조정지, 우수체수지 등이 있다.','우수침투형은 우수를 지중에 침투시키므로 유수유출총량을 감소시키는 효과를 발휘한다.','우수저류형은 우수유출총량은 변하지 않으나 첨두유출량을 감소시키는 효과가 있다.'],answer:1,explain:'우수조정지, 우수체수지는 offsite시설임',calc:false},
+  {id:194,subject:2,exam:'2021-03',text:'수원에 관한 설명으로 틀린 것은?',choices:['복류수는 대체로 수질이 양호하며 대개의 경우 침전지를 생략하는 경우도 있다.','용천수는 지하수가 종종 자연적으로 지표에 나타난 것으로 그 성질은 대개 지표수와 비슷하다.','우리나라의 일반적인 하천수는 연수인 경우가 많으므로 침전과 여과에 의하여 용이하게 정화되는 경','호소수는 하천의 유수보다 자정작용이 큰 것이 특징이다.'],answer:1,explain:'용천수 : 지표수가 지하로 침투하여 암석 또는 점토와 같은 불투수층에 차단되어 지표로 솟아나온 것으로, 유기성 및 무기성 불순물의 함유도가 낮고, 세균도 매우 작다.',calc:false},
+  {id:195,subject:2,exam:'2021-03',text:'하수처리공법 중 접촉산화법에 대한 설명으로 틀린 것은?',choices:['반송슬러지가 필요하지 않으므로 운전관리가 용이하다.','생물상이 다양하여 처리효과가 안정적이다.','부착생물량의 임의 조정이 어려워 조작조건 변경에 대응하기 쉽지 않다.','접촉제가 조 내에 있기 때문에 부착생물량의 확인 어렵다.'],answer:0,explain:'3. 부착 생물량을 임의로 조정할 수 있어 조작조건의 변경에 대응이 쉬움 펌프장시설의 계획하수량 분류식 중계펌프장, 소규모펀프장, 유입-방류펌프장 : 계획시간최대오수량',calc:false},
+  {id:196,subject:2,exam:'2021-03',text:'계획오수량에 관한 설명으로 틀린 것은?',choices:['지하수량은 1인1일최대오수량의 10~20%로 한다.','계획시간최대오수량은 계획1일 최대오수량의 1시간당 수량의 1.3~1.8배를 표준으로 한다.','합류식에서 우천 시 계획오수량은 원칙적으로 계획시간최대오수량의 3배 이상으로 한다.','계획1일평균오수량은 계획1일최대오수량의 50~60%를 표준으로 한다.'],answer:1,explain:'4번은 확실히 틀렸고 1번은 10~20%면 20% 이하라고 할 수 있어 옳다고 볼 수 있습니다 I=h/L, h=I*L 2/1000*1200m',calc:false},
+  {id:197,subject:2,exam:'2021-03',text:'비교회전도(Ns)에 대한 설명 중 틀린 것은?',choices:['펌프의 규정 회전수가 증가하면 비교회전도도 증가한다.','펌프의 규정양정이 증가하면 비교회전도는 감소한다.','일반적으로 비교회전도가 크면 유량이 많은 저양정의 펌프가 된다.','비교회전도가 크게 될수록 흡입성능이 좋아지고 공동현상 발생이 줄어든다.'],answer:3,explain:'4. 비교회전도가 크게 될수록 흡입성능이 나쁘고 공동현상이 발생하기 쉽다.',calc:false},
+  {id:198,subject:2,exam:'2021-03',text:'상수처리를 위한 약품침전지의 구성과 구조로 틀린 것은?',choices:['슬러지의 퇴적심도로서 30cm 이상을 고려한다.','유효수심은 3~5.5m로 한다.','침전지 바닥에는 슬러지 배제에 편리하도록 배수구를 향하여 경사지게 한다.','고수위에서 침전지 벽체 상단까지의 여유고는 10cm 정도로 한다.'],answer:3,explain:'4. 고수위에서 침전지 벽체 상단까지의 여유고는 30cm이상으로 한다.',calc:false},
+  {id:199,subject:2,exam:'2021-03',text:'상수도 급수배관에 관한 설명으로 틀린 것은?',choices:['급수관을 공공도로에 부설할 경우에는 도로 관리자가 정한 점용위치와 깊이에 따라 배관해야 하며','급수관을 부설하고 되메우기를 할 때에는 양질토 또는 모래를 사용하여 적절하게 다짐하여 관을 보','급수관이 개거를 횡단하는 경우에는 가능한 한 개거의 위로 부설한다.','동결이나 결로의 우려가 있는 급수설비의 노출부분에 대해서는 적절한 방한조치나 결로방지조치를'],answer:2,explain:'3. 급수관이 개거를 횡단하는 경우에는 가능한 한 개거의 아래로 부설한다.',calc:false},
+  {id:200,subject:2,exam:'2021-03',text:'하수처리시설의 계획유입수질 산정방식으로 옳은 것은?',choices:['계획오염부하량을 계획1일평균오수량으로 나누어 산정한다.','계획오염부하량을 계획시간평균오수량으로 나누어 산정한다.','계획오염부하량을 계획1일최대오수량으로 나누어 산정한다.','계획오염부하량을 계획시간최대오수량으로 나누어 산정한다.'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:201,subject:2,exam:'2021-03',text:'하수시설에서 우수조정지 구조형식이 아닌 것은?',choices:['댐식(제방높이 15m 미만)','저하식(관내 저류 포함)','굴착식','유하식(자연 호소포함)'],answer:3,explain:'우수조정지의 구조형식 지하식, 굴착식, 댐식(제방높이 15m 미만)',calc:false},
+  {id:202,subject:2,exam:'2021-03',text:'하수관로 개·보수계획 수립 시 포함되어야 할 사항이 아닌 것은?',choices:['불명수량 조사','개·보수 우선순위의 결정','개·보수공사 범위의 설정','주변 인근 신설관로 현황 조사'],answer:2,explain:'하수관로의 개,보수 계획은 관로의 중요도, 계획의 시급성, 환경성 및 기존관로 현황 등을 고려하여 수립 하되 다음과 같은 사항을 포함한다. -기초자료 분석 및 조사우선순위 결정 -불명수량 조사',calc:false},
+  {id:203,subject:2,exam:'2021-03',text:'집수정에서 가정까지의 급수계통을 순서적으로 나열한 것으로 옳은 것은?',choices:['취수 → 도수 → 정수 → 송수 → 배수 →급수','취수 → 도수 → 정수 → 배수 → 송수 →급수','취수 → 송수 → 도수 → 정수 → 배수 →급수','취수 → 송수 → 배수 → 정수 → 도수 →급수'],answer:0,explain:'취수 - 도수 - 정수 - 송수 - 배수 - 급수 암기법 - 상(상수도)치(취수)도(도수) 청(정수)송(송수)에 배(배수)급(급수)한다.',calc:false},
+  {id:204,subject:2,exam:'2021-03',text:'표준활성슬러지법에 관한 설명으로 잘못된 것은?',choices:['수리학적체류시간(HRT)은 6~8시간을 표준으로 한다.','수리학적체류시간(HRT)은 계획하수량에 따라 결정하며, 반송슬러지량을 고려한다.','MLSS농도는 1500~2500mg/L를 표준으로 한다.','MLSS농도가 너무 높으면 필요산소량이 증가하거나 이차침전지의 침전효율이 악화될 우려가 있다.'],answer:1,explain:'표준활성슬러지공법 설계인자 F/M비 : 0.2~0.4kg BOD5 / kg MLVSS day MLSS : 1500~200 mg/L HRT : 6~8hr',calc:false},
+  {id:205,subject:2,exam:'2021-03',text:'계획취수량을 확보하기 위하여 필요한 저수용량의 결정에 사용하는 계획 기준년은?',choices:['원칙적으로 5개년에 제1위 정도의 갈수를 표준으로 한다.','원칙적으로 7개년에 제1위 정도의 갈수를 표준으로 한다.','원칙적으로 10개년에 제1위 정도의 갈수를 표준으로 한다.','원칙적으로 15개년에 제1위 정도의 갈수를 표준으로 한다.'],answer:2,explain:'3번이 정답입니다.',calc:false},
+  {id:206,subject:2,exam:'2021-03',text:'상수의 소독(살균)설비 중 저장설비에 관한 내용으로 ( )에 가장 적합한 것은?',choices:['5일분','10일분','15일분','30일분'],answer:1,explain:'액화염소 저장량 → 1일 사용량 10일 이상',calc:false},
+  {id:207,subject:3,exam:'2021-03',text:'상수도 시설 중 완속여과지의 여과속도 표준 범위는?',choices:['4~5 m/day','5~15 m/day','15~25 m/day','25~50 m/day'],answer:0,explain:'급속여과 120~150m/day, 완속여과 4~5m/day 20 * 3.14 * 16^2 / 4 = x *3.14 * 80^2 / 4 SDI=100/SVI SVI=(SV(%)×104)/MLSS(mg/L)',calc:false},
+  {id:208,subject:3,exam:'2021-03',text:'질산화 반응에 의한 알칼리도의 변화는?',choices:['감소한다.','증가한다.','변화하지 않는다.','증가 후 감소한다.'],answer:0,explain:'질산화 반응이 진행되면 알칼리도가 소모되어  pH가 낮아짐',calc:false},
+  {id:209,subject:3,exam:'2021-03',text:'하수처리를 위한 회전 원판법에 관한 설명으로 틀린 것은?',choices:['질산화가 일어나기 쉬우며 pH가 저하되는 경우가 있다.','원판의 회전으로 인해 부착생물과 회전판 사이에 전단력이 생긴다.','살수여상과 같이 여상에 파리는 발생하지 않으나 하루살이가 발생하는 수가 있다.','활성슬러지법에 비해 이차침전지 SS 유출이 적어 처리수의 투명도가 좋다.'],answer:2,explain:'활성슬러지법에 비해 이차침전지에서 미세한 SS가 유출되기 쉽고 처리수의 투명도고 나쁘다 Q/A=H/t 4m/2.4hr*24hr/day',calc:false},
+  {id:210,subject:3,exam:'2021-03',text:'반송슬러지의 탈인 제거 공정에 관한 설명으로 틀린 것은?',choices:['탈인조 상징액은 유입수량에 비하여 매우 작다.','인을 침전시키기 위해 소요되는 석회의 양은 순수 화학처리방법보다 적다.','유입수의 유기물 부하에 따른 영향이 크다.','대표적인 인 제거공법으로는 phostrip process가 있다.'],answer:2,explain:'유입수의 유기물 부하에 따른 영향이 적다',calc:false},
+  {id:211,subject:3,exam:'2021-03',text:'다음에서 설명하는 분리방법으로 가장 적합한 것은?',choices:['역삼투','한외여과','정밀여과','투석'],answer:2,explain:'초순수나 무균수 같은 거 만들려면 정밀하게 여과해야겠죠? NH3%=1/(1+(Kb/OH))식을 이용해 풀이',calc:false},
+  {id:212,subject:3,exam:'2021-03',text:'폐수의 고도처리에 관한 다음의 기술 중 옳지 않은 것은?',choices:['CI-, SO42- 등의 무기염류의 제거에는 전기투석법이 이용된다.','활성탄 흡착법에서 폐수 중의 인산은 제거되지 않는다.','모래여과법은 고도처리 중에서 흡착법이나 전기투석법의 전처리로써 이용된다.','폐수 중의 무기성질소 화합물은 철염에 의한 응집침전으로 완전히 제거된다.'],answer:2,explain:'질소는 침전제거하지 않는다. P=G^2*µ*V V=Q*T 18480*30*1/86400(Sec->Day로 환산) = 6.41m^3/day G=속도 구배',calc:false},
+  {id:213,subject:3,exam:'2021-03',text:'하수로부터 인 제거를 위한 화학제의 선택에 영향을 미치는 인자가 아닌 것은?',choices:['유입수의 인 농도','슬러지 처리시설','알칼리도','다른 처리공정과의 차별성'],answer:1,explain:'다른 처리공정과의 호환성 V=(Ci-C)Q/KC t=(Ci-C)/KC (100-10)/(0.35×10)=25.714',calc:false},
+  {id:214,subject:3,exam:'2021-03',text:'수질 성분이 부식에 미치는 영향으로 틀린 것은?',choices:['높은 알칼리도는 구리와 납의 부식을 증가시킨다.','암모니아는 착화물 형성을 통해 구리, 납 등의 금속용해도를 증가시킬 수 있다.','잔류염소는 Ca와 반응하여 금속의 부식을 감소시킨다.','구리는 갈바닉 전지를 이룬 배관상에 흠집(구멍)을 야기한다.'],answer:2,explain:'잔류염소는 용존산소와 반응하여 금속의 부식을 증가시킨다.',calc:false},
+  {id:215,subject:3,exam:'2021-03',text:'Freundlich 등은 흡착식(X/M=KCe1/n)에 대한 설명으로 틀린 것은?',choices:['X는 흡착된 용질의 양을 나타낸다.','K, n은 상수값으로 평행농도에 적용한 단위에 상관없이 동일하다.','Ce는 용질의 평형농도(질량/체적)를 나타낸다.','한정된 범위의 용질농도에 대한 흡착 평형값을 나타낸다.'],answer:0,explain:'K와 1/n는 Freundlich 상수로, 흡착제와 흡착질의 특성에 따라 달라집니다. 호기조 - 질산화 및 인의 과잉 흡수 무산소조 - 탈질수 혐기조 - 인의 용출',calc:false},
+  {id:216,subject:4,exam:'2021-03',text:'호기성 미생물에 의하여 발생되는 반응은?',choices:['포도당 → 알코올','초산 → 메탄','아질산염 → 질산염','포도당 → 초산'],answer:2,explain:'질산화 과정중 호기성 미생물 니트로박터가 아질산성 질소에서 질산성질소로',calc:false},
+  {id:217,subject:4,exam:'2021-03',text:'측정 항목과 측정 방법에 관한 설명으로 옳지 않은 것은?',choices:['불소 : 란탄-알리자린 콤프렉손에 의한 착화합물의 흡광도를 측정한다.','시안 : pH 12~13의 알칼리성에서 시안이온전극과 비교전극을 사용하여 전위를 측정한다.','크롬 : 산성용액에서 다이페닐카바자이드와 반응하여 생성하는 착화합물의 흡광도를 측정한다.','망간 : 황산산성에서 과황산칼륨으로 산화하여 생성된 과망간산 이온의 흡광도를 측정한다.'],answer:2,explain:'황산산성에서 과요오드산칼륨으로 산화하여 생성된 과망간산 이온의 흡광도를 측정한다 0.005 mol/L * 0.4L * 158g/1mol = 0.316g cf) 수심 0.4m 미만일 때 Vm=V0.6',calc:false},
+  {id:218,subject:4,exam:'2021-03',text:'용해성 망간을 측정하기 위해 시료를 채취 후 속히 여과해야 하는 이유는?',choices:['망간을 공침시킬 우려가 있는 현탁물질을 제거하기 위해','망간 이온을 접촉적으로 산화, 침전시킬 우려가 있는 이산화망간을 제거하기 위해','용존상태에서 존재하는 망간과 침전상태에서 존재하는 망간을 분리하기 위해','단시간 내에 석출, 침전할 우려가 있는 콜로이드 상태의 망간을 제거하기 위해'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:219,subject:4,exam:'2021-03',text:'대장균(효소이용정량법) 측정에 관한 내용으로 ( )에 옳은 것은?',choices:['자외선','적외선','가시선','기전력'],answer:0,explain:'F=비적정시약/적정시약 =10/10.15 =0.9852 항량 = 1시간 , g당 0.3mg',calc:false},
+  {id:220,subject:4,exam:'2021-03',text:'수질연속자동측정기기의 설치방법 중 시료 채취지점에 관한 내용으로 ( )에 옳은 것은?',choices:['5','15','25','35'],answer:2,explain:'[200mg/L * x (mL)]/[300 mL] = 4 mg/L x=6 mL',calc:false},
+  {id:221,subject:4,exam:'2021-03',text:'기체크로마토그래프 검출기에 관한 설명으로 틀린 것은?',choices:['열전도도검출기는 금속 필라멘트 또는 전기저항체를 검출소자로 한다.','수소염이온화검출기의 본체는 수소연소노즐, 이온수집기, 대극, 배기구로 구성된다.','알칼리열이온화검출기는 함유할로겐화합물 및 함유황화물을 고감도로 검출할 수 있다.','전자포획형검출기는 많은 니트로화합물, 유기금속화합물 등을 선택적으로 검출할 수 있다.'],answer:2,explain:'알칼리 열이온화 검출기는 유기질소 화합물 및 유기인 화합물을 검출할수있다.',calc:false},
+  {id:222,subject:4,exam:'2021-03',text:'하천유량 측정을 위한 유속 면적법의 적용범위로 틀린 것은?',choices:['대규모 하천을 제외하고 가능하면 도섭으로 측정할 수 있는 지점','교량 등 구조물 근처에서 측정할 경우 교량의 상류지점','합류나 분류되는 지점','선정된 유량측정 지점에서 말뚝을 박아 동일 단면에서 유량측정을 수행할 수 있는 지점'],answer:2,explain:'합류나 분류가  없는 지점',calc:false},
+  {id:223,subject:4,exam:'2021-03',text:'이온크로마토그래피에 관한 설명 중 틀린 것은?',choices:['물 시료 중 음이온의 정성 및 정량분석에 이용된다.','기본구성은 용리액조, 시료 주입부, 펌프, 분리컬럼, 검출기 및 기록계로 되어있다.','시료의 주입량은 보통 10~100μL 정도이다.','일반적으로 음이온 분석에는 이온교환 검출기를 사용한다.'],answer:3,explain:'일반적으로 음이온 분석에는 전기전도도 검출기를 사용한다.',calc:false},
+  {id:224,subject:4,exam:'2021-03',text:'pH 미터의 유지관리에 대한 설명으로 틀린 것은?',choices:['전극이 더러워 졌을 때는 유리전극을 묽은 염산에 잠시 담갔다가 증류수로 씻는다.','유리전극을 사용하지 않을 때는 증류수에 담가둔다.','유지, 그리스 등이 전극표면에 부착되면 유기용매로 적신 부드러운 종이로 전극을 닦고 증류수로 씻','전극에 발생하는 조류나 미생물은 전극을 보호하는 작용이므로 떨어지지 않게 주의한다.'],answer:2,explain:'전극을 떨어뜨려야한다. Q=K*b*h3/2 K=유량계수 b=절단의 폭',calc:false},
+  {id:225,subject:1,exam:'2020-09',text:'방류수 수질기준 초과율별 부과계수의 구분이 잘못된 것은?',choices:['20% 이상 30% 미만 - 1.4','30% 이상 40% 미만 - 1.8','50% 이상 60% 미만 - 2.0','80% 이상 90% 미만 - 2.6'],answer:0,explain:'10% 미만 - 1 10% 이상 20% 미만 - 1.2 ... 90% 이상 100%까지 - 2.8',calc:false},
+  {id:226,subject:1,exam:'2020-09',text:'우리나라의 수자원 이용현황 중 가장 많이 이용되어져 온 용수는?',choices:['공업용수','농업용수','생활용수','유지용수(하천)'],answer:1,explain:'우리나라 수자원 이용 순위 농업용수> 유지용수 > 생활용수 > 공업용수 순 입니다. Ln0.5=-k×5day K=0.1386/day',calc:false},
+  {id:227,subject:1,exam:'2020-09',text:'Fungi(균류, 곰팡이류)에 관한 설명으로 틀린 것은?',choices:['원시적 탄소동화작용을 통하여 유기물질을 섭취하는 독립영양계 생물이다.','폐수내의 질소와 용존산소가 부족한 경우에도 잘 성장하며 pH가 낮은 경우에도 잘 성장한다.','구성물질의 75 ~ 80%가 물이며 C10H17O6N을 화학구조식으로 사용한다.','폭이 약 5 ∼10 μm 로서 현미경으로 쉽게 식별되며 슬러지팽화의 원인이 된다.'],answer:1,explain:'균류는 동화작용을 하지 않는다 난류확산방정식 인자 ; 유하거리, 단면, 유속, 난류확산속도, 침강속도, 자기감쇄계수 4*74.2dyne/cm*cos0*1/0.01cm*cm3/1g*1g/980dyne = 30.2857',calc:false},
+  {id:228,subject:1,exam:'2020-09',text:'C2H6 15g이 완전 산화하는데 필요한 이론적 산소량(g)은?',choices:['약 46','약 56','약 66','약 76'],answer:1,explain:'C2H6 + 7*O -> 2*CO2 + 3*H2O 원자량:  30 : 7*16(112) 15  :  X X=56',calc:false},
+  {id:229,subject:1,exam:'2020-09',text:'콜로이드 응집의 기본 메카니즘과 가장 거리가 먼 것은?',choices:['이중층 분산','전하의 중화','침전물에 의한 포착','입자간의 가교 형성'],answer:2,explain:'1. 이중층 압축 BOD5=BODu(1-10^(-k×5)) BOD5/BODu=1-10^(-0.15×5)=0.8222 35~45%',calc:false},
+  {id:230,subject:1,exam:'2020-09',text:'미생물 세포의 비증식 속도를 나타내는 식에 대한 설명이 잘못된 것은?',choices:['μmax는 최대 비증식속도로 시간－1 단위이다.','Ks는 반속도상수로서 최대 성장률이 1/2일 때의 기질의 농도이다.','μ = μmax인 경우, 반응속도가 기질농도에 비례하는 1차 반응을 의미한다.','[S]는 제한기질 농도이고 단위는 mg/L이다.'],answer:2,explain:'3.반응속도가 기질농도와 상관없이 일정한 0차반응',calc:false},
+  {id:231,subject:1,exam:'2020-09',text:'수질예측모형의 공간성에 따른 분류에 관한 설명으로 틀린 것은?',choices:['0차원 모형：식물성 플랑크톤의 계절적 변동사항에 주로 이용된다.','1차원 모형：하천이나 호수를 종방향 또는 횡방향의 연속교반 반응조로 가정한다.','2차원 모형：수질의 변동이 일방향성이 아닌 이방향성으로 분포하는 것으로 가정한다.','3차원 모형：대호수의 순환 패턴분석에 이용된다.'],answer:2,explain:'1. 0차원 모형: 식물성 플랑크톤의 계절적 변동사항에는 적용하기 곤란하다. 기억하기! Thio 는 황하합물 접두사임',calc:false},
+  {id:232,subject:1,exam:'2020-09',text:'0.1 ppb Cd 용액 1L 중에 들어 있는 Cd의 양(g)은?',choices:['1 × 10－6','1 × 10－7','1 × 10－8','1 × 10－9'],answer:2,explain:'0.1 ppb = 0.1*10^-9 kg/L = 0.1*10^-9*10^3 g/L = 10^-7 g/L µ = µmax × (S / Ks+S) 1) S_80 0.8 µmax = µmax × (S_80 / Ks+S_80)',calc:false},
+  {id:233,subject:1,exam:'2020-09',text:'부영양화의 영향으로 틀린 것은?',choices:['부영양화가 진행되면 상품가치가 높은 어종들이 사라져 수산업의 수익성이 저하된다.','부영양화된 호수의 수질은 질소와 인 등 영양염류의 농도가 높으나 인의 과잉공급은 농작물의 이상','부영양화의 pH는 중성 또는 약산성이나 여름에는 일시적으로 강산성을 나타내어 저니층의 용출을','조류로 인해 정수공정의 효율이 저하된다.'],answer:3,explain:'3. 부영양호의 pH는 중성 또는 약알칼리성이나 여름에는 일시적으로 강알칼리성을 나타내어 저니층의 용출을 유발한다. Dt= K1/(K2-K1)X L0*(10^-k1*t-10^-k2*t)+D0*10^-k2*t Dt= t시간후 용존산소 부족농도, k1=탈산소계수, k2=재폭기계수 L0= 최초 유기물 총량 (일반적으로 L',calc:false},
+  {id:234,subject:2,exam:'2020-09',text:'바다에서 발생되는 적조현상에 관한 설명과 가장 거리가 먼 것은?',choices:['적조 조류의 독소에 의한 어패류의 피해가 발생한다.','해수 중 용존산소의 결핍에 의한 어패류의 피해가 발생한다.','갈수기 해수 내 염소량이 높아질 때 발생된다.','플랑크톤의 번식에 충분한 광량과 영양염류가 공급될 때 발생된다.'],answer:2,explain:'갈수기가 아니라 풍수기에 해수 내 염분은 낮고 영양염이 높아질 때 발생합니다.',calc:false},
+  {id:235,subject:2,exam:'2020-09',text:'자연부식 중 매크로셀 부식에 해당되는 것은?',choices:['산소농담(통기차)','특수토양부식','간섭','박테리아부식'],answer:0,explain:'매크로셀 부식 : 콘크리트 산소농담 이종금속 부식',calc:false},
+  {id:236,subject:2,exam:'2020-09',text:'복류수를 취수하는 집수매거의 유출단에서 매거 내의 평균유속 기준은?',choices:['0.3 m/sec 이하','0.5 m/sec 이하','0.8 m/sec 이하','1.0 m/sec 이하'],answer:1,explain:'복류수를 취수하는 취수시설인 집수매거의 속도는 퇴적물이 쌓이지 않도록 1m/sec 이하로 한다. 2. 급수관을 방화수조, 수영장등 오염원의 원인이 될 우려가 있는 시설과 연결하는 경우에는 급수관의 토 출구를 만수면보다 200mm 이상 높게 설치해야한다. 다만 관경이 50mm 이하인 경우에는 그 높이를 50m m 이하로 한다. (상수도시설기준, 한국상하수도협회 2010)',calc:false},
+  {id:237,subject:2,exam:'2020-09',text:'펌프의 비교회전도에 관한 설명으로 옳은 것은?',choices:['비교회전도가 크게 될수록 흡입성능이 나쁘고 공동현상이 발생하기 쉽다.','비교회전도가 크게 될수록 흡입성능은 나쁘나 공동현상이 발생하기 어렵다.','비교회전도가 크게 될수록 흡입성능은 좋고 공동현상이 발생하기 어렵다.','비교회전도가 크게 될수록 흡입성능은 좋으나 공동현상이 발생하기 쉽다.'],answer:3,explain:'비교회전도가 크게 될수록 흡입성능이 나쁘고 공동현상이 발생하기 쉽다. 손실수두(m)=f*L/D*V^2/2g V=Q/A 에서 시간 단위(day)는 sec로 환산해서 대입',calc:false},
+  {id:238,subject:2,exam:'2020-09',text:'하천수를 수원으로 하는 경우, 취수시설인 취수문에 대한 설명으로 틀린 것은?',choices:['취수지점은 일반적으로 상류부의 소하천에 사용하고 있다.','하상변동이 작은 지점에서 취수할 수 있어 복단면의 하천 취수에 유리하다.','시공조건에서 일반적으로 가물막이를 하고 임시하도 설치 등을 고려해야 한다.','기상조건에서 파랑에 대하여 특히 고려할 필요는 없다.'],answer:1,explain:'2. 복단면의 취수에 불리하다.',calc:false},
+  {id:239,subject:2,exam:'2020-09',text:'정수시설인 배수관의 수압에 관한 내용으로 옳은 것은?',choices:['급수관을 분기하는 지점에서 배수관내의 최대정수압은 150 kPa(약 1.6 kgf/cm2)를 초과하지 않아','급수관을 분기하는 지점에서 배수관내의 최대정수압은 250 kPa(약 2.6 kgf/cm2)를 초과하지 않아','급수관을 분기하는 지점에서 배수관내의 최대정수압은 450kPa(약 4.6 kgf/cm2)를 초과하지 않아','급수관을 분기하는 지점에서 배수관내의 최대정수압은 700 kPa(약 7.1 kgf/cm2)를 초과하지 않'],answer:3,explain:'배수관의 수압은 최소동수압 150kPa, 최대동수압 400kPa 가 맞고 보기에 나온 "급수관 분기지점"에서 배수관의 수압은 최소동수압 150kPa이상, 최대정수압 700kPa이하 가 맞습니다.',calc:false},
+  {id:240,subject:2,exam:'2020-09',text:'화학적 처리를 위한 응집시설 중 급속혼화시설에 관한 설명으로 ( )에 옳은 내용은?',choices:['30초','1분','3분','5분'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:241,subject:2,exam:'2020-09',text:'상수도 시설 중 침사지에 관한 설명으로 틀린 것은?',choices:['위치는 가능한 한 취수구에 근접하여 제내지에 설치한다.','지의 유효수심은 2 ∼ 3 m를 표준으로 한다.','지의 상단높이는 고수위보다 0.6∼1m의 여유고를 둔다.','지내평균유속은 2~7 cm/sec를 표준으로 한다.'],answer:1,explain:'지의 유효수심은 3~4m를 표준으로 한다.',calc:false},
+  {id:242,subject:2,exam:'2020-09',text:'해수담수화시설 중 역삼투설비에 관한 설명으로 옳지 않은 것은?',choices:['해수담수화시설에서 생산된 물은 pH나 경도가 낮기 때문에 필요에 따라 적절한 약품을 주입하거나','막모듈은 플러싱과 약품세척 등을 조합하여 세척한다.','고압펌프를 정지할 때에는 드로백이 유지되도록 체크 밸브를 설치하여야 한다.','고압펌프는 효율과 내식성이 좋은 기종으로 하며 그 형식은 시설규모 등에 따라 선정한다.'],answer:2,explain:'드로백이 유지되면 안됨',calc:false},
+  {id:243,subject:2,exam:'2020-09',text:'계획취수량은 계획 1일 최대급수량의 몇 % 정도의 여유를 두고 정하는가?',choices:['5%','10%','15%','20%'],answer:3,explain:'기타 필요한 작업용수를 포함한 손실수량 등을 고려하여 계획1일 최대급수량의 10% 정도증가된 수량으 로 계획수량을 정한다 H= L×I+1.5×V^2/2g+ 알파 (여기서 L은 역사이퍼 관거의 길이, I는 동수경사)',calc:false},
+  {id:244,subject:2,exam:'2020-09',text:'하수도 계획의 목표연도는 원칙적으로 몇 년 정도로 하는가?',choices:['10년','15년','20년','25년'],answer:1,explain:'상수도 계획 목표연도 15~20년 하수도 계획 목표연도 20년 하수관거 확률년수 10~30년 빗물펌프장 확률년수 30~50년',calc:false},
+  {id:245,subject:2,exam:'2020-09',text:'상수도 취수보의 취수구에 관한 설명으로 틀린 것은?',choices:['높이는 배사문의 바닥높이보다 0.5~1m이상 낮게 한다.','유입속도는 0.4~0.8m/sec를 표준으로 한다.','제수문의 전면에는 스크린을 설치한다.','계획취수위는 취수구로부터 도수기점까지의 손실수두를 계산하여 결정한다.'],answer:0,explain:'1.높이는 배사문의 바닥높이 보다 0.5~1m 이상 높게 한다',calc:false},
+  {id:246,subject:2,exam:'2020-09',text:'상수시설에서 급수관을 배관하고자 할 경우의 고려사항으로 옳지 않은 것은?',choices:['급수관을 공공도로에 부설할 경우에는 다른 매설물과 의 간격을 30 cm 이상 확보한다.','수요가의 대지 내에서 가능한 한 직선배관이 되도록 한다.','가급적 건물이나 콘크리트의 기초 아래를 횡단하여 배관하도록 한다.','급수관이 개거를 횡단하는 경우에는 가능한 한 개거의 아래로 부설한다.'],answer:3,explain:'3. 가급적 건물이나 콘크리트의 기초 아래를 피하여 배관하도록 한다. 계획오수량 -합류식에서 우천 시 계획오수량은 원칙적으로 계획시간 최대오수량의 3배 이상으로 한다.',calc:false},
+  {id:247,subject:2,exam:'2020-09',text:'상수도시설인 착수정에 관한 설명으로 ( )에 옳은 것은?',choices:['0.5분','1.0분','1.5분','3.0분'],answer:2,explain:'착수정의 용량과 설비 -착수정의 용량은 체류시간을 1.5분 이상으로 하고 수심은 3~5m 정도로 한다.',calc:false},
+  {id:248,subject:3,exam:'2020-09',text:'하수관거시설이 황화수소에 의하여 부식되는 것을 방지하기 위한 대책으로 틀린 것은?',choices:['관거를 청소하고 미생물의 생식 장소를 제거한다.','염화제2철을 주입하여 황화물을 고정화한다.','염소를 주입하여 ORP를 저하시킨다.','환기에 의해 관내 황화수소를 희석한다.'],answer:1,explain:'황화수소 부식대책 -약품 투입 : 초산염을 주입하여 ORP의 저하를 방지한다 유하시간 + 유입시간 t = 유입시간(6분) + 유하시간',calc:false},
+  {id:249,subject:3,exam:'2020-09',text:'응집에 관한 설명으로 옳지 않은 것은?',choices:['황산알루미늄을 응집제로 사용할 때 수산화물 플록을 만들기 위해서는 황산알루미늄과 반응할 수 있','응집제로 황산알루미늄은 대개 철염에 비해 가격이 저렴한 편이다.','응집제로 황산알루미늄은 철염보다 넓은 pH 범위에서 적용이 가능하다.','응집제로 황산알루미늄을 사용하는 경우, 적당한 pH 범위는 대략 4.5에서 8이다.'],answer:3,explain:'3. 응집제로서 황산알루미늄은 철염보다 좁은 pH 범위에서 적용이 가능하다. SS농도 = 350 mg/L = 350 g/m^3 = 0.35 kg/m^3 비중 1.05 = 1.05×10^3 kg/m^3 (→ 비중 1일 경우 = 1.0×10^3 kg/m^3) 슬러지 부피(m^3/day)',calc:false},
+  {id:250,subject:3,exam:'2020-09',text:'도시 폐수의 침전시간에 따라 변화하는 수질인자의 종류와 거리가 가장 먼 것은?',choices:['침전성 부유물','총부유물','BOD5','SVI 변화'],answer:3,explain:'BOD5는 침전으로 인하여 변하는 인자가 아니므로 침전 시간에 따라 변화하는 수질인자의 종류와는 거 리가 멀다. 2,000 (TSS) - 1,480 (VSS) = 520 (FSS) 1,480 * 0.3 = 444',calc:false},
+  {id:251,subject:3,exam:'2020-09',text:'폐수 내 시안화합물 처리방법인 알칼리염소법에 관한 설명과 가장 거리가 먼 것은?',choices:['CN의 분해를 위해 유지되는 pH는 10이상이다.','니켈과 철의 시안착염이 혼입된 경우 분해가 잘 되지 않는다.','산화제의 투입량이 과잉인 경우에는 염화시안이 발생되므로 산화제는 약간 부족하게 주입한다.','염소처리 시 강알칼리성 상태에서 1단계로 염소를 주입하여 시안화합물을 시안산화물로 변환시킨'],answer:0,explain:'3. 부족하게 주입하면 나중에 시안이 다 반응하지 못하고 잔류할 수 있기 때문에 과잉으로 주입한다. 2. 질산화는 호기조, 탈질은 무산소조에서 발생 3. 유기물 흡수가 혐기조에서 일어나므로 외부탄소원은 혐기조에 주입 4. 인의 과잉섭취는 호기조에서 발생',calc:false},
+  {id:252,subject:3,exam:'2020-09',text:'정수장 응집 공정에 사용되는 화학 약품 중 나머지 셋과 그 용도가 다른 하나는?',choices:['오존','명반','폴리비닐아민','황산제일철'],answer:1,explain:'오존만 산화제이고 나머지는 다 응집제이다 Q=AV 적용 Q= 36000 V= 40  A= 15*30 Q/V= 900= 개수* A',calc:false},
+  {id:253,subject:3,exam:'2020-09',text:'질산화 박테리아에 대한 설명으로 옳지 않은 것은?',choices:['절대호기성이어서 높은 산소농도를 요구한다.','Nitrobacter는 암모늄이온의 존재 하에서 pH 9.5. 이상이면 생장이 억제된다.','질산화 반응의 최적온도는 25℃이며 20℃이하, 40℃이상에서는 활성이 없다.','Nitrosomonas는 알칼리성 상태에서는 활성이 크지만 pH 6.0이하에서는 생장이 억제된다.'],answer:2,explain:'최적 온도 30도 20도 이하와 40도 이상은 활성이 없지는 않고요',calc:false},
+  {id:254,subject:3,exam:'2020-09',text:'활성슬러지 공정 중 핀플럭이 주로 많이 발생하는 공정은?',choices:['심층폭기법','장기폭기법','점감식폭기법','계단식폭기법'],answer:1,explain:'장기폭기법 폭기를 오랬동안 진행하는 경우 플럭이 부서져 핀플록 발생',calc:false},
+  {id:255,subject:3,exam:'2020-09',text:'고농도의 액상 PCB 처리방법으로 가장 거리가 먼 것은?',choices:['방사선조사(코발트 60에 의한 γ선 조사)','연소법','자외선조사법','고온 고압 알칼리 분해법'],answer:0,explain:'고농도의 액상 PCB 처리방법에는 연소법, 자외선조사법, 고온 고압 알칼리 분해법이 있다. 따라서 정답은 1번',calc:false},
+  {id:256,subject:3,exam:'2020-09',text:'살수여상 상단에서 연못화(ponding)가 일어나는 원인으로 가장 거리가 먼 것은?',choices:['여재가 너무 작을 때','여재가 견고하지 못하고 부서질 때','탈락된 생물막이 공극을 폐쇄할 때','BOD 부하가 낮을 때'],answer:3,explain:'공극이 막혀 살수시 물이 고이는현상 여재가 너무작거나 부서지거나 하여 살수한물이 통과하지 못할때 발생 Q(Ct-Co)=k×V×Ct^(0.5) (k는 속도상수, Ct는 t시간 후 농도, Co는 초기농도) 여기서 Co=250mg/L×0.05=12.5mg/L',calc:false},
+  {id:257,subject:3,exam:'2020-09',text:'회전생물막접촉기(RBC)에 관한 설명으로 틀린 것은?',choices:['재순환이 필요 없고 유지비가 적게 든다.','메디아는 전형적으로 약 40%가 물에 잠긴다.','운영변수가 적어 모델링이 간단하고 편리하다.','설비는 경량재료로 만든 원판으로 구성되며 1~2 rpm의 속도로 회전한다.'],answer:1,explain:'3. 운영변수가 많은 편이다. SRT(고형물체류시간,day)=MLSS×V/QwSSw+QoSSo (여기서 SSo 유출수의 고형물 농도, SSw은 잉여슬러지의 고형물 농도) 유량(Q)과 체류시간(t)을 이용해 반응조의 체적 V을 구하면,',calc:false},
+  {id:258,subject:4,exam:'2020-09',text:'생물학적 인 제거를 위한 A/O 공정에 관한 설명으로 옳지 않은 것은?',choices:['폐슬러지 내의 인의 함량이 비교적 높고 비료의 가치가 있다.','비교적 수리학적 체류시간이 짧다.','낮은 BOD/P 비가 요구된다.','추운 기후의 운전조건에서 성능이 불확실하다.'],answer:2,explain:'3. 높은 BOD/P 비가 요구된다.',calc:false},
+  {id:259,subject:4,exam:'2020-09',text:'물벼룩을 이용한 급성 독성시험법에서 사용하는 용어의 정의로 틀린 것은?',choices:['치사：일정 비율로 준비된 시료에 물벼룩을 투입하고 24시간 경과 후 시험용기를 살며시 움직여주','유영저해：독성물질에 의해 영향을 받아 일부 기관(촉각, 후복부 등)이 움직임이 없을 경우를 \'유영','반수영향농도：투입 시험생물의 50%가 치사 혹은 유영저해를 나타낸 농도이다.','지수식 시험방법：시험기간 중 시험용액을 교환하여 농도를 지수적으로 계산하는 시험을 말한다.'],answer:1,explain:'지수식 시험방법은 시험기간 중 시험용액을 교환하지 않는 시험을 말한다. 총대장균군수/100mL=C/V*100 C:생성된집락수 V:여과한시료랑(mL)',calc:false},
+  {id:260,subject:4,exam:'2020-09',text:'흡광도 측정에서 투과율이 30%일 때 흡광도는?',choices:['0.37','0.42','0.52','0.63'],answer:2,explain:'A=Log(1/t) 이므로 A=Log(1/0.3)=0.5228',calc:false},
+  {id:261,subject:4,exam:'2020-09',text:'BOD 측정용 시료를 희석할 때 식종 희석수를 사용하지 않아도 되는 시료는?',choices:['잔류염소를 함유한 폐수','pH 4. 이하 산성으로 된 폐수','화학공장 폐수','유기물질이 많은 가정 하수'],answer:3,explain:'BOD용 식종 희석수는 시료 중에 유기물질을 산화시킬 수 있는 미생물의 양이 충분하지 못할 때 미생물을 시료에 넣어주는 것인데 유기물질이 많은 가정 하수는 미생물의 양이 충분하므로 식종희석수를 사용하지 않아도 된다. 오염정도가 심한 공장폐수 : 0.1~1.0%',calc:false},
+  {id:262,subject:4,exam:'2020-09',text:'하천수의 시료 채취 지점에 관한 내용으로 ( )에 공통으로 들어갈 내용은?',choices:['2 m','3 m','5 m','6 m'],answer:0,explain:'2*(1000-x)+7*x= 5*1000',calc:false},
+  {id:263,subject:4,exam:'2020-09',text:'데발다 합금 환원 증류법으로 질산성 질소를 측정하는 원리의 설명으로 틀린 것은?',choices:['데발다 합금으로 질산성 질소를 암모니아성 질소로 환원한다.','지표수, 지하수, 폐수 등에 적용할 수 있으며, 정량한계는 중화적정법은 0.1mg/L, 흡광도법은 0.5','아질산성질소는 설퍼민산으로 분해 제거한다.','암모니아성질소 및 일부 분해되기 쉬운 유기질소는 알칼리성에서 증류 제거한다.'],answer:1,explain:'2. 지표수 지하수 폐수 등에서 적용할 수 있으며, 정량한계는 중화적정법은 0.5mg/L, 흡광도법은 0.1m g/L이다.',calc:false},
+  {id:264,subject:4,exam:'2020-09',text:'분원성 대장균군(막여과법) 분석 시험에 관한 내용으로 틀린 것은?',choices:['분원성대장균군이란 온혈동물의 배설물에서 발견되는 그람음성·무아포성의 간균이다.','물속에 존재하는 분원성대장균군을 측정하기 위하여 페트리접시에 배지를 올려놓은 다음 배양 후 여','배양기 및 항온수조는 배양온도를 (25±0.5)℃로 유지할수 있는 것을 사용한다.','시험결과는 \'분원성 대장균군수/100 mL\' 로 표기한다.'],answer:2,explain:'배양기 및 항온수조는 배양온도를 (44.5±0.2)℃로 유지할 수 있는 것을 사용한다.',calc:false},
+  {id:265,subject:4,exam:'2020-09',text:'석유계 총탄화수소 용매추출/기체크로마토그래프에 대한 설명으로 틀린 것은?',choices:['컬럼은 안지름 0.20~0.35mm, 필름두께 0.1~3.0 μm, 길이 15~60m의 DB-1, DB-5. 및 DB-62','운반기체는 순도 99.999 %이상의 헬륨으로서(또는 질소) 유량은 0.5~5mL/min로 한다.','검출기는 불꽃광도검출기(FPD)를 사용한다.','시료 주입부 온도는 280~320℃, 컬럼온도는 40~320℃로 사용한다.'],answer:2,explain:'3. 검출기는 불꽃이온화 검출기(FID)를 사용한다.',calc:false},
+  {id:266,subject:4,exam:'2020-09',text:'카드뮴을 자외선/가시선 분광법으로 측정할 때 사용되는 시약으로 가장 거리가 먼 것은?',choices:['수산화나트륨용액','요오드화칼륨용액','시안화칼륨용액','타타르산용액'],answer:3,explain:'카드뮴 자외선/가시선 분광법:시안화칼륨이 존재하는 알칼리성에서 디티존과 반응시켜 생성하는 카드뮴착 염을 사염화탄소로 추출하고, 추출한 카드뮴 착염을 타타르산용액으로 역추출한 다음 다시 수산화나트륨 과 시안화칼륨을 넣어 디티존과 반응하여 생성하는 적색의 카드뮴착염을 사염화탄소로 추출하고 그 흡광 도를 530nm에서 측정하는 방법이다.',calc:false},
+  {id:267,subject:4,exam:'2020-09',text:'감응계수를 옳게 나타낸 것은? (단, 검정곡선 작성용 표준용액의 농도＝C, 반응값＝R)',choices:['감응계수＝R / C','감응계수＝C / R','감응계수＝R × C','감응계수＝C － R'],answer:2,explain:'“정확히 취하여”라 하는 것은 규정한 양의 시료를 부피피펫으로 눈금까지 취하는 것을 말한다 나트륨 칼륨 등 알칼리금속은 이온화 에너지가 작다',calc:false},
+  {id:268,subject:4,exam:'2020-09',text:'다음 중 관내의 유량 측정 방법이 아닌 것은?',choices:['오리피스','자기식 유량측정기','피토우(pitot)관','위어(Weir)'],answer:1,explain:'위어는 측정용 수로에 의한 유량측정방법이다. 관내의 유량 측정 방법 : 벤투리미터, 유량측정용 노즐, 오리피스, 피토우관, 자기식 유량측정기 질산성 질소는 4도씨에서 보존',calc:false},
+  {id:269,subject:1,exam:'2020-08',text:'방지시설설치의 면제기준에 관한 설명으로 틀린 것은?',choices:['수질오염물질이 항상 배출허용기준 이하로 배출되는 경우','새로운 수질오염물질이 발생되어 배출시설 또는 방지시설의 개선이 필요한 경우','폐수를 전량 위탁처리하는 경우','폐수를 전량 재이용하는 등 방지시설을 설치하지 아니하고도 수질오염물질을 적정하게 처리할 수 있'],answer:3,explain:'개선해야하는데… 면제 안해주지요 "고랭지 배추 400m에서 씹어(15%)먹기"로 외우면 쉬워요 C2H5OH + 3O2 → 2CO2 + 3H2O C2H5OH = (12*2)+(1*5)+(16)+(1) = 46',calc:false},
+  {id:270,subject:1,exam:'2020-08',text:'물질대사 중 동화작용을 가장 알맞게 나타낸 것은?',choices:['잔여영양분 + ATP','잔여영양분 + ADP + 무기인','세포내 영양분의 일부 + ATP','세포내 영양분의 일부 + ADP + 무기인'],answer:0,explain:'2.잔여 영양분을 반응시켜 ATP를 합성하는 것은 잔여영양분의 이화반응 3.세포 내 영양분을 ATP를 사용해 분해하는 것은 일종의 분해반응 4.세포 내 영양분의 일부를 배설물로 분해하여 ATP를 합성하는 것은영양분의 이화반응',calc:false},
+  {id:271,subject:1,exam:'2020-08',text:'세균의 구조에 대한 설명이 올바르지 못한 것은?',choices:['세포벽 : 세포의 기계적인 보호','협막과 점액층 : 건조 혹은 독성물질로부터 보호','세포막 : 호흡대사 기능을 발휘','세포질 : 유전에 관계되는 핵산 포함'],answer:3,explain:'4. 리보솜 : 유전에 관계되는 핵산 포함',calc:false},
+  {id:272,subject:1,exam:'2020-08',text:'자연계의 질소순환에 대한 설명으로 가장 거리가 먼 것은?',choices:['대기의 질소는 방전작용, 질소고정세균 그리고 조류에 의하여 끊임없이 소비된다.','소변 속의 질소는 주로 요소로 바로 탄산암모늄으로 가수 분해된다.','유기질소는 부패균이나 곰팡이의 작용으로 암모니아성 질소로 변환된다.','암모니아성 질소는 혐기성 상태에서 환원균에 의해 바로 질소가스로 변환딘다.'],answer:3,explain:'암모니아성 질소는 호기성 조건하에 질화균의 활동에 의해 아질산성질소-질산성질소로 변환.',calc:false},
+  {id:273,subject:1,exam:'2020-08',text:'수자원의 순환에서 가장 큰 비중을 차지하는 것은?',choices:['해양으로의 강우','증발','증산','육지로의 강우'],answer:1,explain:'비중을 차지하는 순서 : 증발 > 해양으로의 강우 > 육지에서의 강우 > 증산',calc:false},
+  {id:274,subject:1,exam:'2020-08',text:'Graham의 기계법칙에 관한 내용으로 ( ) 에 알맞은 것은?',choices:['㉠ 1/6, ㉡ 1/4','㉠ 1/6, ㉡ 1/9','㉠ 1/4, ㉡ 1/6','㉠ 1/9, ㉡ 1/6'],answer:0,explain:'V염소/V수소=√2/√71=1/6 V산소/V수소=√2/√32=1/4',calc:false},
+  {id:275,subject:1,exam:'2020-08',text:'화학흡착에 관한 내용으로 옳지 않은 것은?',choices:['흡착된 물질은 표면에 농축되어 여러 개의 겹쳐진 층을 형성함','흡착 분자는 표면에 한 부위에서 다른 부위로의 이동이 자유롭지 못함','흡착된 물질 제거를 위해 일반적으로 흡착제를 높은 온도로 가열함','거의 비가역적임'],answer:1,explain:'1. 화학흡착은 단일분자층 방류수 혼합 식 2 = [(400000*0.5)+(30000*X)]/(400000+30000) 발생하는 하수 BOD 20g/day * 20만명 / 30000m3 = 133.3333',calc:false},
+  {id:276,subject:1,exam:'2020-08',text:'크롬에 관한 설명으로 틀린 것은?',choices:['만성크롬중독인 경우에는 미나마타병이 발생한다.','3가 크롬은 비교적 안정하나 6가 크롬 화합물은 자극성이 강하고 부식성이 강하다.','3가 크롬은 피부흡수가 어려우나 6가 크롬은 쉽게 피부를 통과한다.','만성중독현상으로는 비점막염증이 나타난다.'],answer:0,explain:'미나마타병, 헌터루셀증후군: 수은',calc:false},
+  {id:277,subject:1,exam:'2020-08',text:'우리나라의 수자원에 관한 설명으로 가장 거리가 먼 것은?',choices:['강수량의 지역적 차이가 크다.','주요 하천 중 한강의 수자원 보유량이 가장 많다.','하천의 유역면적은 크지만 하천경사는 급하다.','하천의 하상계수가 크다.'],answer:2,explain:'우리나라 하천의 유역 면적은 작고 산지가 많어 하천 경사는 급하다.',calc:false},
+  {id:278,subject:1,exam:'2020-08',text:'적조현상에 의해 어패류가 폐사하는 원인과 가장 거리가 먼 것은?',choices:['적조생물이 어패류의 아가미에 부착하여','적조류의 광범위한 수면막 형성으로 인해','치사성이 높은 유독물질을 분비하는 조류로 인해','적조류의 사후분해에 의한 수중 부패 독의 발생으로 인해'],answer:1,explain:'어패류가 폐사하는 원인 - 적조생물이 어패류의 아가미에 부착하여 - 치사성이 높은 유독물질을 분비하는 조류로 인해 - 적조류의 사후분해에 의한 수중 부패 독의 발생으로 인해',calc:false},
+  {id:279,subject:1,exam:'2020-08',text:'Formaldehyde(CH2O)의 COD/TOC 비는?',choices:['1.37','1.67','2.37','2.67'],answer:3,explain:'CH2O + O2 → CO2 + H2O O2 = 16*2 = 32 = COD COD/TOC = 32/12 = 2.67',calc:false},
+  {id:280,subject:1,exam:'2020-08',text:'유해물질과 그 중독증상(영향)과의 관계로 가장 거리가 먼 것은?',choices:['Mn : 흑피증','유기인 : 현기증, 동공축소','Cr6+ : 피부궤양','PCB : 카네미유증'],answer:1,explain:'비소(As): 흑피증 망간(Mn): 파킨슨씨 증후군 유사증상 3.알칼리도<총경도 일때 일시경도(탄산경도) = 알칼리도 -약혼합형: 하상구배와 조차가 적을 때, 해수와 담수의 2층 밀도류가 발생',calc:false},
+  {id:281,subject:2,exam:'2020-08',text:'자정상수(f)의 영향 인자에 관한 설명으로 옳은 것은?',choices:['수심이 깊을수록 자정상수는 커진다.','수온이 높을수록 자정상수는 작아진다.','유속이 완만할수록 자정상수는 커진다.','바닥구배가 클수록 자정상수는 작아진다.'],answer:1,explain:'자정상수 커지는 조건: 얕은 수심, 낮은 수온, 빠른 유속, 큰 바닥구배',calc:false},
+  {id:282,subject:2,exam:'2020-08',text:'상수도시설인 취수탑의 취수구에 관한 내용과 가장 거리가 먼 것은?',choices:['계획취수위는 취수구로부터 도수기점까지의 수두손실을 계산하여 결정한다.','취수탑의 내측이나 외측에 슬루스케이트(제수문), 버터플라이밸브 또는 제수밸브 등을 설치한다.','전면에서는 협잡물을 제거하기 위한 스크린을 설치해야 한다.','단면형상은 장방형 또는 원형으로 한다.'],answer:0,explain:'1. 계획최저수위인 경우에도 계획취수량을 확실히 취수할 수 있는 설치 위치',calc:false},
+  {id:283,subject:2,exam:'2020-08',text:'계획오수량에 관한 설명으로 옳지 않은 것은?',choices:['계획1일최대오수량은 1인1일최대오수량에 계힉인구를 곱한 후, 여기에 공장 폐수량, 지하수량 및 기','합류식에서 우천 시 계획오수량은 원칙적으로 계획시간최대오수량의 3배 이상으로 한다.','지하수량은 1인1일평균오수량의 5~10%로 한다.','계획시간최대오수량은 계획1일 최대오수량의 1시간당 수량의 1.3~1.8배를 표준으로 한다.'],answer:2,explain:'3. 지하수량은 1인1일 최대오수량의 10~20%로 한다.',calc:false},
+  {id:284,subject:2,exam:'2020-08',text:'도수관을 설계할 때 평균유속 기준으로 ( )에 옳은 것은?',choices:['㉠ 1.5m/s, ㉡ 0.3m/s','㉠ 1.5m/s, ㉡ 0.6m/s','㉠ 3.0m/s, ㉡ 0.3m/s','㉠ 3.0m/s, ㉡ 0.6m/s'],answer:2,explain:'도수관 최대 3m/s, 최소 0.3m/s 오수관 최대 3m/s, 최소 0.6m/s 우수, 합류관거 최대 3m/s, 최소 0.8m/s',calc:false},
+  {id:285,subject:2,exam:'2020-08',text:'상수의 도수관로의 자연부식 중 매크로셀 부식에 해당되지 않은 것은?',choices:['이종금속','간섭','산소농담(통기차)','콘크리트·토양'],answer:0,explain:'마이크로셀부식 : 일반토양, 특수토양, 박테리아 매크로셀 : 이종금속, 산소농담, 콘크리트 전식 : 간섭 취수틀',calc:false},
+  {id:286,subject:2,exam:'2020-08',text:'상수도관으로 사용되는 관종 중 스테인리스강관에 관한 특징으로 틀린 것은?',choices:['강인성이 뛰어나고 충격에 강하다.','용접접속에 시간이 걸린다.','라이닝이나 도장을 필요로 하지 않는다.','이종금속과의 절연처리가 필요 없다.'],answer:3,explain:'스테인리스강관은 이종금속과의 절연처리를 필요로 한다.',calc:false},
+  {id:287,subject:2,exam:'2020-08',text:'우수배제계획 수립에 적용되는 하수관거의 계획우수량 결정을 위한 확률년수는?',choices:['5~10년','10~15년','10~30년','30~50년'],answer:2,explain:'하수관거의 확률년수 : 10 ~ 30년 빗물펌프장의 확률년수 : 30 ~ 50년',calc:false},
+  {id:288,subject:2,exam:'2020-08',text:'상수도시설 일반구조의 설계하중 및 외력에 대한 고려사항으로 틀린 것은?',choices:['풍압은 풍량에 풍력계수를 곱하여 산정한다.','얼음 두께에 비하여 결빙 면이 작은 구조물의 설계에는 빙압을 고려한다.','지하수위가 높은 곳에 설치하는 지상 구조물은 비웠을 경우의 부력을 고려한다.','양입력은 구조물의 전후에 수위차가 생기는 경우에 고려한다.'],answer:0,explain:'풍압은 속도압에 풍력계수를 곱하여 산정한다.',calc:false},
+  {id:289,subject:2,exam:'2020-08',text:'하수관거 배수설비의 설명 중 옳지 않은 것은?',choices:['배수설비는 공공하수도의 일종이다.','배수설비 중의 물받이의 설치는 배수구역 경계지점 또는 배수구역 안에 설치하는 것을 기본으로 한','결빙으로 인한 우·오수 흐름의 지장이 발생하지 않도록 하여야 한다.','배수관은 암거로 하며, 우수만을 배수하는 경우에는 개거도 가능하다.'],answer:0,explain:'1. 배수설비는 "개인"하수도의 일종이다.',calc:false},
+  {id:290,subject:2,exam:'2020-08',text:'하수 펌프장 시설인 스크류펌프(screw pump)의 일반적인 장·단점으로 틀린 것은?',choices:['회전수가 낮기 때문에 마모가 적다.','수중의 협잡물이 물과 함께 떠올라 폐쇄 가능성이 크다.','기동에 필요한 물채움장치나 밸브 등 부대시설이 없어 자동운전이 쉽다.','토출측의 수로를 압력관으로 할 수 없다.'],answer:1,explain:'수중의 협잡물이 물과 함께 떠올라 폐쇄가 적다. 취수보 또한 토사유입을 방지할 수 있음 취수문은 토사유입을 방지할 수 없음 따라서 2번이 맞는 답이 되려면 \'취수문과 달리 토사유입을 방지할 수 있다.\' 가 되어야 함',calc:false},
+  {id:291,subject:2,exam:'2020-08',text:'계획송수량과 계획도수량의 기준이 되는 수량은?',choices:['계획송수량 : 계획1일최대급수량','계획송수량 : 계획시간최대급수량','계획송수량 : 계획취수량','계획송수량 : 계획1일최대급수량'],answer:3,explain:'4번이 정답입니다.',calc:false},
+  {id:292,subject:2,exam:'2020-08',text:'펌프의 캐비테이션(공동현상) 발생을 방지하기 위한 대책으로 옳은 것은?',choices:['펌프의 설치위치를 가능한 한 높게 하여 가용유효흡입수두를 크게 한다.','흡입관의 손실을 가능한 한 작게 하여 가용유효흡입수두를 크게 한다.','펌프의 회전속도를 높게 선정하여 필요유효흡입수두를 작게 한다.','흡입 측 밸브를 완전히 폐쇄하고 펌프를 운전한다.'],answer:2,explain:'[ 캐비테이션 방지대책 ] 펌프의 설치위치를 가능한 한 낮추어 가용유효흡입수두를 크게 한다. 흡입관의 손실을 가능한 한 작게 하여 가용유효흡입수두를 크게 한다. 펌프의 회전속도를 낮게 선정하여 필요유효흡입수두를 작게 한다.',calc:false},
+  {id:293,subject:2,exam:'2020-08',text:'수격작용을 방지 또는 줄이는 방법이라 할 수 없는 것은?',choices:['펌프에 플라이휠을 붙여 펌프의 관성을 증가시킨다.','흡입측 관로에 압력조절수조를 설치하여 부압을 유지시킨다.','펌프 토출구 부근에 공기탱크를 두거나 부압 발생지점에 흡기밸브를 설치하여 압력강하 시 공기를','관내유속을 낮추거나 관거상황을 변경한다.'],answer:1,explain:'토출측 관로에 압력조절수조를 설치하여 부압을 유지시킨다.',calc:false},
+  {id:294,subject:3,exam:'2020-08',text:'취수시설에서 취수된 원수를 정수시설까지 끌어들이는 시설은?',choices:['배수시설','급수시설','송수시설','도수시설'],answer:1,explain:'집수정에서 가정까지의 급수계통 취수 → 도수 → 정수 → 송수 → 배수 → 급수 수위강하 = H - h0 2π * 20m/day * 20m * 5m/2.3log(500m/0.5m)',calc:false},
+  {id:295,subject:3,exam:'2020-08',text:'하·폐수를 통하여 배출되는 계면활성제에 대한 설명 중 잘못된 것은?',choices:['계면활성제는 메틸렌블루 활성물질이라고도 한다.','계면활성제는 주로 합성세제로부터 배출되는 것이다.','물에 약간 녹으며 폐수처리 플랜트에서 거품을 만들게 된다.','ABS는 생물학적으로 분해가 매우 쉬우나 LAS는 생물학적으로 분해가 어려운 난분해성 물질이다.'],answer:3,explain:'LAS는 생물학적으로 분해가 매우 쉬우나 ABS는 생물학적으로 분해가 어려운 난분해성 물질이다.',calc:false},
+  {id:296,subject:3,exam:'2020-08',text:'접촉매체를 이용한 생물막공법에 대한 설명으로 틀린 것은?',choices:['유지관리가 쉽고, 유기물 농도가 낮은 기질제거에 유효하다.','수온의 변화나 부하변동에 강하고 처리효율에 나쁜 영향을 주는 슬러지 팽화문제를 해결할 수 있다.','공극폐쇄 시에도 양호한 처리수질을 얻을 수 있으며 세정조작이 용이하다.','슬러지 발생량이 적고 고도처리에도 효과적이다.'],answer:2,explain:'3. 공극폐쇄가 자주 발생하고 세정조작이 어렵다',calc:false},
+  {id:297,subject:3,exam:'2020-08',text:'막분리 공법을 이용한 정수처리의 장점으로 가장 거리가 먼 것은?',choices:['부산물이 생기지 않는다.','정수장 면적을 줄일 수 있다.','시설의 표준화를 부품관리 시공이 간편하다.','자동화, 무인화가 용이하다.'],answer:2,explain:'3. 시설의 표준화가 되어있지 않아 부품관리 시공이 어렵다',calc:false},
+  {id:298,subject:3,exam:'2020-08',text:'다음 공정에서 처리될 수 있는 폐수의 종류는?',choices:['크롬폐수','시안폐수','비소폐수','방사능폐수'],answer:0,explain:'6가 크롬 처리하는 환원침전법',calc:false},
+  {id:299,subject:3,exam:'2020-08',text:'무기수은계 화합물을 함유한 폐수의 처리방법이 아닌 것은?',choices:['황화물침전법','활성탄흡착법','산화분해법','이온교환법'],answer:0,explain:'무기수은계 화합물 처리방법은 황화물침전법, 활성탄흡착법, 이온교환법이 있다. 유기수은계 화합물 처리방법은 흡착법, 산화분해법이 있다. 필요한 액체 명반을 A라고 놓고 풀이 시작합니다. A(L/day) x 1281/1(g/L) x 48/100(순도) x 26.98x2/666.7(알루미늄(2개)/명반) = 8(g/L) x 10000 (m^',calc:false},
+  {id:300,subject:3,exam:'2020-08',text:'침전지에서 입자의 침강 속도가 증대되는 원인이 아닌 것은?',choices:['입자 비중의 증가','액체 점성계수의 증가','수온의 증가','입자 지경의 증가'],answer:1,explain:'액체의 점성계수가 증가하면 침강속도는 감소한다.',calc:false},
+  {id:301,subject:3,exam:'2020-08',text:'음용수 중 철과 망간의 기준 농도에 맞추기 위한 그 제거 공정으로 알맞지 않은 것은?',choices:['포기에 의한 침전','생물학적 여과','제올라이트 수착','인산염에 의한 산화'],answer:3,explain:'제거 공정으로는 포기에 의한 침전, 생물학적 여과, 제올라이트 수착, 산화법, 석회소다회법, 수산화물침 전법, 이온교환법이 있다.',calc:false},
+  {id:302,subject:3,exam:'2020-08',text:'하수처리방식 중 회전원판법에 관한 설명으로 가장 거리가 먼 것은?',choices:['활성슬러지법에 비해 2차 침전지에서 미세한 SS가 유출되기 쉽고, 처리수의 투명도가 나쁘다.','운전관리상 조작이 간단한 편이다.','질산화가 거의 발생하지 않으며, pH 저하도 거의 없다.','소비 전력량이 소규모 처리시설에서는 표준 활성 슬러지법에 비하여 적은 편이다.'],answer:2,explain:'회전원판법은 질산화가 일어나기 쉬우며 이로 인하여 처리수의 BOD가 높아진다.',calc:false},
+  {id:303,subject:4,exam:'2020-08',text:'활성탄 흡착단계를 설명한 것으로 가장 거리가 먼 것은?',choices:['흡착제 주위의 막을 통하여 피흡착제의 분자가 이동하는 단계','피흡착제의 극성에 의해 제타포텐샬(Zeta Potential)이 적용되는 단계','흡착제 공극을 통하여 피흡착제가 확산하는 단계','흡착이 되면서 흡착제와 피흡착제 사이에 결합이 일어나는 단계'],answer:1,explain:'활성탄 흡착의 단계에 해당하지 않는 것을 고르면 된다. 1단계: 유기물질(피흡착제)이 물을 통해 고액 경계면까지 이동하는 단계(즉, 흡착제 주위로 이동하여 모 여듬) 2단계: 유기물질(피흡착제)이 흡착제의 공극을 통해 분산 및 확산하는 단계.',calc:false},
+  {id:304,subject:4,exam:'2020-08',text:'유량계 중 최대유량/최소유량 비가 가장 큰 것은?',choices:['벤튜리미터','오리피스','자기식 유량측정기','피토우관'],answer:2,explain:'벤츄리, 유량측정노즐, 오리피스:4/1 피토우관:3/1 자기식 유량측정기:10/1',calc:false},
+  {id:305,subject:4,exam:'2020-08',text:'정량한계(LOQ)를 옳게 표시한 것은?',choices:['정량한계 = 3 × 표준편차','정량한계 = 3.3 × 표준편차','정량한계 = 5 × 표준편차','정량한계 = 10 × 표준편차'],answer:3,explain:'일반적으로 방법검출한계와 동일한 수행 절차에 의해 수립되며 방법검출한계와 같은 낮은 농도의 시료 7 ~10개를 반복 측정하여 표준편차의 10배에 해당하는 값을 정량한계로 정의한다.',calc:false},
+  {id:306,subject:4,exam:'2020-08',text:'노말헥산추출물질 분석에 관한 설명으로 틀린 것은?',choices:['시료를 pH 4 이하의 산성으로 하여 노말헥산층에 용해되는 물질을 노말헥산으로 추출한다.','폐수 중의 비교적 휘발되지 않는 탄화수소, 탄화수소유도체, 그리이스유상물질 및 광유류를 함유하','광유류의 양을 시험하고자 할 경우에는 활성규산마그네슘 컬럼으로 광유류를 흡착한 후 추출한다.','지표수, 지하수, 폐수 등에 적용할 수 있으며, 정량한계는 0.5mg/L 이다.'],answer:2,explain:'광우류의 양을 시험하고 자 할 경우에는 활성규산마그네슘칼륨을 이용하여 동식물유지류를 흡착 제거 하고 유출액을.같은 방법으로 구할 수 있음.',calc:false},
+  {id:307,subject:4,exam:'2020-08',text:'자외선/가시선 분광법에 의한 페놀류 시험방법에 대한 설명으로 틀린 것은?',choices:['정량한계는 클로로폼 추출법일 때 0.005 mg/L, 직접측정법일 때 0.05 mg/L 이다.','완충액을 시료에 가하여 pH 10 으로 조절한다.','붉은색의 안티피린계 색소의 흡광도를 측정한다.','흡광도를 측정하는 방법으로 수용액에서는 460nm, 클로로폼 용액에서는 510nm에서 측정한다.'],answer:2,explain:'[ 페놀류의 자외선/가시선 분광법의 측정원리 ] 증류한 시료에 염화암모늄-암모니아 완충용액을 넣어 pH10으로 조절한 다음 4-아미노안티피린과 헥사시 안화철(II)산칼륨을 넣어 생성된 붉은색의 안티피린계 색소의 흡광도를 측정하는 방법으로, 수용액에서는 510nm, 클로로폼 용액에서는 460nm에서 측정한다.',calc:false},
+  {id:308,subject:4,exam:'2020-08',text:'막여과법에 의한 총대장균군 시험의 분석절차에 대한 설명으로 틀린 것은?',choices:['멸균된 핀셋으로 여과막을 눈금이 위로 가게 하여 여과장치의 지지대 위에 올려 놓은 후 막여과장치','페트리접시에 20~80개의 세균 집락을 형성하도록 시료를 여과한 상부에 주입하면서 흡인여과하고','여과하여야 할 예상 시료량이 10mL보다 적을 경우에는 멸균된 희석액으로 희석하여 여과하여야 한','총대장균군수를 예측할 수 없는 경우에는 여과량을 달리하여 여러 개의 시료를 분석하고 한 여과 표'],answer:3,explain:'200개 이상의 집락이 형성되면 안됨',calc:false},
+  {id:309,subject:4,exam:'2020-08',text:'시료채취 시 유의사항으로 틀린 것은?',choices:['유류 또는 부유물질 등이 함유된 시료는 시료의 균일성이 유지될 수 있도록 채취해야 하며 침전물 등','퍼클로레이트를 측정하기 위한 시료를 채취할 때 시료의 공기접촉이 없도록 시료병에 가득 채운다.','시료채취량은 시험항목 및 시험횟수에 따라 차이가 있으나 보통 3~5L 정도이어야 한다.','휘발성유기화합물 분석용 시료를 채취할 때에는 뚜껑의 격막을 만지지 않도록 주의하여야 한다.'],answer:2,explain:'퍼클로레이트를 측정하기 위한 경우는 용기는 질산 및 정제수로 씻은 후 사용하며, 시료채취량은 시료병 의 2/3을 채운다. 질산 = 유기물 적은 시료 질산- 염산 = 유기물 보통, 금속의 수산화물, 산화물, 인산염',calc:false},
+  {id:310,subject:4,exam:'2020-08',text:'기체크로마토그래프법을 이용한 유기인 측정에 관한 내용으로 틀린 것은?',choices:['크로마토그램을 작성하여 나타난 피이크의 유지시간에 따라 각 성분의 농도를 정량한다.','유기인 화합물 중 이피엔, 파라티온, 메틸디메톤, 디이아지논 및 펜토에이트 측정에 적용한다.','불꽃광도검출기 또는 질소인 검출기를 사용한다.','운반기체는 질소 또는 헬륨을 사용하며 유량은 0.5~3mL/min을 사용한다.'],answer:0,explain:'1.크로마토그램을 작성하여 나타난 피이크의 유지시간에 따라 각 성분 확인, 피이크의 높이나 면적을 측 정하여 유기인 정량한다',calc:false},
+  {id:311,subject:4,exam:'2020-08',text:'수산화나트륨(NaOH) 10g을 물에 녹여서 500mL로 하였을 경우 용액의 농도(N)는?',choices:['0.25','0.5','0.75','1.0'],answer:0,explain:'10g/500ml * 1eq/40g * 1000ml/1L = 0.5N 플라스마의 높은 온도와 비활성으로 화학적 간섭의 발생가능성은 낮으나, 출력이 낮은 경우 일부 발생할 수 있다. 540 -> 6가 크롬',calc:false},
+  {id:312,subject:4,exam:'2020-08',text:'총칙 중 관련 용어의 정의로 틀린 것은?',choices:['용기 : 시험에 관련된 물질을 보호하고 이물질이 들어가는 것을 방지할 수 있는 것을 말한다.','바탕시험을 하여 보정한다 : 시료에 대한 처리 및 측정을 할 때, 시료를 사용하지 않고 같은 방법으로','정확히 취하여 : 규정한 양의 액체를 부피피펫으로 눈금까지 취하는 것을 말한다.','정밀히 단다 : 규정된 양의 시료를 취하여 화학저울 또는 미량저울로 칭량함을 말한다.'],answer:0,explain:'용기 : 시험용액 또는 시험에 관계된 물질을 보존, 운반 또는 조작하기 위하여 넣어두는 것으로 시험에 지 장을 주지 않도록 깨끗한 것을 뜻한다.',calc:false},
+  {id:313,subject:4,exam:'2020-08',text:'정도관리 요소 중 정밀도를 옳게 나타낸 것은?',choices:['정밀도(%) = (연속적으로 n회 측정한 결과의 평균값/표준편차) × 100','정밀도(%) = (표준편차/연속적으로 n회 측정한 결과의 평균값) × 100','정밀도(%) = (상대편차/연속적으로 n회 측정한 결과의 평균값) × 100','정밀도(%) = (연속적으로 n회 측정한 결과의 평균값/상대편차) × 100'],answer:1,explain:'정밀도(%)=s/x×100 s:표준편차 x:연속적으로 n회 측정한 결과의 평균값',calc:false},
+  {id:314,subject:1,exam:'2020-06',text:'오염총량관리시행계획에 포함되어야 하는 사항으로 가장 거리가 먼 것은?',choices:['오염원 현황 및 예측','오염도 조사 및 오염부하량 산정방법','연차별 오염부하량 삭감 목표 및 구체적 삭감 방안','수질예측 산정자료 및 이행 모니터링 계획'],answer:3,explain:'**오염총량관리 \'시행계획\' - 오염원 현황 및 예측 - 오염총량관리시행계획 대상 유역의 현황 - 연차별 오염부하량 삭감 목표 및 구체적 삭감 방안',calc:false},
+  {id:315,subject:1,exam:'2020-06',text:'물의 물리적 특성으로 가장 거리가 먼 것은?',choices:['물의 표면장력이 낮을수록 세탁물의 세정효과가 증가한다.','물이 얼면 액체상태보다 밀도가 커진다.','물의 융해열은 다른 액체보다 높은 편이다.','물의 여러 가지 특성은 물분자의 수소결합 때문에 나타난다.'],answer:2,explain:'물이 얼때 밀도가 낮아지고 4도씨에서 밀도가 가장 높다. (K1*BODu/K2-K1)*(10^(-K1*t)-10^(-K2*t))+D0*10^(-K2*t) 식의 맨 끝항에서 D0이 DO포화농도-t=0일때의 DO농도 이므로 D0=3mg/L입니다. 따라서 3.95114로 나옵니다.',calc:false},
+  {id:316,subject:1,exam:'2020-06',text:'생체 내에 필수적인 금속으로 결핍 시에는 인슐린의 저하를 일으킬 수 있는 유해물질은?',choices:['Cd','Mn','CN','Cr'],answer:3,explain:'인슐린저하는 무조건 크롬',calc:false},
+  {id:317,subject:1,exam:'2020-06',text:'지구상의 담수 중 차지하는 비율이 가장 큰 것은?',choices:['빙하 및 빙산','하천수','지하수','수증기'],answer:1,explain:'담수 비율 빙하 및 빙산 그다음 지하수 포화지방족 화합물은 불포화지방족 화합물보다 쉽게 분해되지 않는다. SAR(meq/L)=Na+/sqrt((Ca2+ + Mg2+/2))',calc:false},
+  {id:318,subject:1,exam:'2020-06',text:'생물학적 오탁지표들에 대한 설명으로 틀린 것은?',choices:['BIP(Biological Index of Pollution) : 현미경적 생물을 대상으로 전생물 수에 대한 동물성 생물수','BI(Biotix Index) : 육안적 동물을 대상으로 전생물 수에 대한 청수성 및 광범위 출현 미생물의 백분','TSI(Trophic State Index) : 투명도에 대한 부영양화지수와 투명도-클로로필농도의 상관관계에 의','SDI(Species Diversity Index) : 종의 수와 개체수의 비로 물의 오염도를 나타내는 지표로 값이'],answer:3,explain:'SDI값이 클수록 종의 수가 많은 것',calc:false},
+  {id:319,subject:1,exam:'2020-06',text:'콜로이드 입자가 분산매 분자들과 층돌하여 불규칙하게 움직이는 현상은?',choices:['투석현상(Dialysis)','틴들현상(Tyndall)','브라운운동(Brown motion)','반발력(Zeta potential)'],answer:2,explain:'브라운 운동: 콜로이드 입자가 분산매의 열운동에 의한 충돌로 인해 보이는 불규칙적인 운동 -오답 투석현상: 콜로이드 용액에 섞여 있는 용질분자나 이온을 반투막을 이용하여 분리함으로써 콜로이드 용 액을 정제하는 방법',calc:false},
+  {id:320,subject:1,exam:'2020-06',text:'호수 내의 성층현상에 관한 설명으로 가장 거리가 먼 것은?',choices:['여름성층의 연직 온도경사는 분자확산에 의한 DO 구배와 같은 모양이다.','성층의 구분 중 약층(thermocline)은 수심에 따른 수온변화가 적다.','겨울성층은 표층수 냉각에 의한 성층이어서 역성층이라고도 한다.','전도현상은 가을과 봄에 일어나며 수괴의 연직혼합이 왕성하다.'],answer:1,explain:'thermocline = 수온약층 수온약은 수온변화가 많은 층을 말함 혼합층>수온변화가 거의 없는 층',calc:false},
+  {id:321,subject:1,exam:'2020-06',text:'다음에 기술한 반응식에 관여하는 미생물 중에서 전자수용체가 다른 것은?',choices:['H2S+2O2→H2SO4','2NH3+3O2→2HNO2-+2H2O','NO3','Fe2++O2→Fe3+'],answer:0,explain:'보기 3번만이 질산이온이 전자 수용체로 작용하고있다.(탈질화 미생물) 나머지 보기는 산소가 전자수용 체로 작용하고있다. (질산화,황산화, 철산화 미생물) 단위변환문제. 늘어난 염분농도 35mg/L -> 35g/m^3',calc:false},
+  {id:322,subject:1,exam:'2020-06',text:'하천수질모형의 일반적인 가정 조건이 아닌 것은?',choices:['오염물질이 하천에 유입되자마자 즉시 완전혼합된다.','정상상태이다.','확산에 의한 영향을 무시한다.','오염물질의 농도분포는 흐름방향으로 이루어진다.'],answer:0,explain:'완전혼합이아닌 플러그 흐름 형태이다.',calc:false},
+  {id:323,subject:1,exam:'2020-06',text:'카드뮴에 대한 내용으로 틀린 것은?',choices:['카드뮴은 은백색이며 아연 정련업, 도금공업 등에서 배출된다.','골연화증이 유발된다.','만성폭로로 인한 흔한 증상은 단백뇨이다.','월슨씨병 증후군과 소인증이 유발된다.'],answer:3,explain:'Cd: 이따이이따이병, 골연화, 빈혈증, 고혈압',calc:false},
+  {id:324,subject:1,exam:'2020-06',text:'분뇨의 특징에 관한 설명으로 틀린 것은?',choices:['분뇨 내 질소화합물은 알칼리도를 높게 유지시켜 pH의 강하를 막아준다.','분과 뇨의 구성비는 약 1:8∼1:10 정도이며 고액분리가 용이하다.','분의 경우 질소산화물은 전체 VS의 12∼20% 정도 함유되어 있다.','분뇨는 다량의 유기물을 함유하며, 점성이 있는 반고상 물질이다.'],answer:0,explain:'분뇨는 고액분리가 어렵다. 아래와 같은 오류 신고가 있었습니다. 여러분들의 많은 의견 부탁 드립니다. 추후 여러분들의 의견을 반영하여 정답을 수정하도록 하겠습니다.',calc:false},
+  {id:325,subject:1,exam:'2020-06',text:'금속을 통해 흐르는 전류의 특성으로 가장 거리가 먼 것은?',choices:['금속의 화학적 성질은 변하지 않는다.','전류는 전자에 의해 운반된다.','온도의 상승은 저항을 증가시킨다.','대체로 전지저항이 용액의 경우보다 크다.'],answer:3,explain:'용액보다 작다',calc:false},
+  {id:326,subject:1,exam:'2020-06',text:'급성독성을 평가하기 위하여 일반적으로 사용되는 기준은?',choices:['TLm(Median Tolerance Limit)','MicroTox','Daphnia','ORP(Oxidation - Reduction Potential)'],answer:0,explain:'TLm 은 어류에 대한 독성 시험의 결과를 나타내는 값으로 어류를 급성 독성물질이 들어 있는 배수의 희석 액 중에 일정시간 사육하고, 그 사이에 공시어의 50%가 살아남는 배수 농도를 표시함. 24,48, 96 각 시간 의 TLm이 구해짐.',calc:false},
+  {id:327,subject:2,exam:'2020-06',text:'하천의 자정작용 단계 중 회복지대에 대한 설명으로 틀린 것은?',choices:['물이 비교적 깨끗하다.','DO가 포화농도의 40% 이상이다.','박테리아가 크게 번성한다.','원생동물 및 윤충이 출현한다.'],answer:2,explain:'-회복지대 특징 분해가능한 유기물이 거의 분해됨, DO가 점점 증가하기 시작함, 질산화 발생, 혐기성균이 호기성균으로 대체됨 Fungi 발생, 조류 발생, 세균수 감소',calc:false},
+  {id:328,subject:2,exam:'2020-06',text:'취수관로 구조 결정 시 바람직하지 않은 것은?',choices:['취수관로를 고수부지에 부설하는 경우, 그 매설깊이는 원칙적으로 계획고수부지고에서 2m 이상 깊','관로에 작용하는 내압 및 외압에 견딜 수 있는 구조로 한다.','사고 등에 대비하기 위하여 가능한 한 2열 이상으로 부설한다.','취수관로가 제방을 횡단하는 경우, 취수관로는 원지반보다는 가능한 한 성토부분에 매설하여 제방을'],answer:1,explain:'-취수관로 구조- ㄱ.관거에 작용하는 내압 맟 외압에 견딜 수 있는 구조로 한다. ㄴ.관거를 제외지에 부설하는 경우 원칙적으로 계획고수부지고에서 2m이상 깊게 매설한다. ㄷ.관거가 제방을 횡단하는 경우 원칙적으로 유연한 구조로 한다. 또 비상시에 지수가 확실하고 용이하게',calc:false},
+  {id:329,subject:2,exam:'2020-06',text:'하수관로에 관한 내용으로 틀린 것은?',choices:['도관은 내산 및 내알칼리성이 뛰어나고 마모에 강하며 이형관을 제조하기 쉽다.','폴리에틸렌관은 가볍고 취급이 용이하여 시공성은 좋으나 산, 알칼리에 약한 단점이 있다.','덕타일주철관은 내압성 및 내식성이 우수하다.','파형강관은 용융아연도금된 강판을 스파이럴형으로 제작한 강관이다.'],answer:1,explain:'산,알칼리에 강하다',calc:false},
+  {id:330,subject:2,exam:'2020-06',text:'하수관로시설의 황화수소 부식 대책으로 가장 거리가 먼 것은?',choices:['관거를 청소하고 미생물의 생식 장소를 제거한다.','환기에 의해 관내 황화수소를 희석한다.','황산염환원세균의 활동을 촉진시켜 황화수소 발생을 억제한다.','방식재료를 사용하여 관을 방호한다.'],answer:2,explain:'-황산염 환원 세균의 활동을 억제 황산염 환원 세균에 선택적으로 작용하는 약제를 주입하고 살균 또는 세균 활동을 억제함.',calc:false},
+  {id:331,subject:2,exam:'2020-06',text:'급속여과지의 여과모래에 대한 설명으로 가장 거리가 먼 것은?',choices:['유효경은 0.45∼1.0mm의 범위 내에 있어야 한다.','균등계수는 1.7이하로 한다.','마모율은 3% 이하로 한다.','신규투입 여과사의 세척탁도는 5∼10도 범위 내에 있어야 한다.'],answer:3,explain:'1.유효경은 0.45∼1.0mm의 범위 내에 있어야 한다. 2.균등계수는 1.7이하로 한다. 3.마모율은 3% 이하로 한다. 4.신규투입 여과사의 세척탁도는 \'30도 이하\'여야 한다.',calc:false},
+  {id:332,subject:2,exam:'2020-06',text:'공동현상(Cavitation)이 발생하는 것을 방지하기 위한 대책으로 틀린 것은?',choices:['흡입측 밸브를 완전히 개방하고 펌프를 운전한다.','흡입관의 손실을 가능한 크게 한다.','펌프의 위치를 가능한 한 낮춘다.','펌프의 회전속도를 낮게 선정한다.'],answer:1,explain:'2.흡입관의 손실을 가능한 작게한다.',calc:false},
+  {id:333,subject:2,exam:'2020-06',text:'하수의 계획오염부하량 및 계획유입수질에 관한 내용으로 틀린 것은?',choices:['계획유입수질 : 계획오염부하량을 계획1일최대오수량으로 나눈 값으로 한다.','생활오수에 의한 오염부하량 : 1인1일당 오염부하량 원단위를 기초로 하여 정한다.','관광오수에 의한 오염부하량 : 당일관광과 숙박으류 나누고 각각의 원단위에서 추정한다.','영업오수에 의한 오염부하량 : 업무의 종류 및 오수의 특징 등을 감안하여 결정한다.'],answer:0,explain:'1.계획유입수질: 계획오염부하량을 계획1일 평균오수량으로 나눈 값으로 한다.',calc:false},
+  {id:334,subject:2,exam:'2020-06',text:'상수처리시설 중 장방형 침사지의 구조에 관한 설명으로 틀린 것은?',choices:['지의 길이는 폭의 3∼8배를 표준으로 한다.','지의 고수위는 계획취수량이 유입될 수 있도록 취수구의 계획최저수위 이하로 정한다.','지내평균유속은 2∼7cm/sec를 표준으로 한다.','침사지 바닥경사는 1/20 이상의 경사를 두어야 한다.'],answer:2,explain:'4. 저부경사는 1/100 ~ 2/100 으로 한다. -원칙적으로 철근콘크리트구조로 하며 부력에 대해서도 안전한 구조로 한다. -표면부하율은 200~500 mm/min 을 표준으로 한다. -지내 평균유속은 2~7 cm/s 를 표준으로 한다.',calc:false},
+  {id:335,subject:2,exam:'2020-06',text:'상수취수를 위한 저수시설 계획기준년에 관한 내용으로 ( )에 알맞은 것은?',choices:['7개년에 제1위 정도의 갈수','10개년에 제1위 정도의 갈수','7개년에 제1위 정도의 홍수','10개년에 제1위 정도의 홍수'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:336,subject:2,exam:'2020-06',text:'상수도시설인 도수시설의 도수노선에 관한 설명으로 틀린 것은?',choices:['원칙적으로 공공도로 또는 용지로 한다.','수평이나 수직방향의 급격한 굴곡을 피한다.','관로상 어떤 지점도 동수경사선보다 낮게 위치하지 않도록 한다.','몇 개의 노선에 대하여 건설비 등의 경제성, 유지관리의 난이도 등을 비교·검토하고 종합적으로 판단'],answer:3,explain:'관로상 어떤 지점도 동수경사선보다 높게 위치하지 않도록 한다. [ 상수도시설 중 저수시설인 하구둑 ] 개발수량 : 중소규모의 개발이 기대된다. 경제성 : 일반적으로 댐보다 저렴하다.',calc:false},
+  {id:337,subject:2,exam:'2020-06',text:'상수도시설인 급속여과지에 관한 내용으로 옳지 않은 것은?',choices:['여과속도는 단층의 경우 120∼150m/d를 표준으로 한다.','여과지 1지의 여과면적은 100m2이하로 한다.','여과면적은 계획정수량을 여과속도로 나누어 계산한다.','급속여과지는 중력식과 압력식이 있으며 중력식을 표준으로 한다.'],answer:0,explain:'급속여과지 -중력식과 압력식이 있으며 중력식을 표준으로 한다. -여과면적은 1지당 150 m^2 이하 -직사각형을 표준으로 함',calc:false},
+  {id:338,subject:2,exam:'2020-06',text:'하수관로의 접합방법을 정할 때의 고려 사항으로 ( )에 가장 적합한 것은?',choices:['㉠ 60° ㉡ 5배','㉠ 60° ㉡ 3배','㉠ 30∼45° ㉡ 5배','㉠ 30∼45° ㉡ 3배'],answer:0,explain:'2개의 관거가 합류하는 경우 중심교각은 60도 이하이고 곡선을 갖고 합류하는 경우 곡률반경은 내경의 5 배 이상으로 한다. 구민사 필기 이론 책에는 이렇게 나와있는데 정답에 오류가 없다면 60도 이하가 맞는 것 같습니다',calc:false},
+  {id:339,subject:2,exam:'2020-06',text:'하수도시설인 유량조정조에 관한 내용으로 틀린 것은?',choices:['조의 용량은 체류시간 3시간을 표준으로 한다.','유효수심은 3∼5m를 표준으로 한다.','유량조정조의 유출수는 침사지에 반송하거나 펌프로 일차침전지 혹은 생물반응조에 송수한다.','조내의 침전물의 발생 및 부패를 방지하기 위해 교반장치 및 산기장치를 설치한다.'],answer:0,explain:'조의 용량 : 계획1일최대오수량의 1.5배 이하',calc:false},
+  {id:340,subject:3,exam:'2020-06',text:'단면형태가 직사각형인 하수관로의 장·단점으로 옳은 것은?',choices:['시공장소의 흙두께 및 폭원에 제한을 받는 경우에 유리하다.','만류가 되기까지는 수리학적으로 불리하다.','철근이 해를 받았을 경우에도 상부하중에 대하여 대단히 안정적이다.','현장 타설의 경우, 공사기간이 단축된다.'],answer:1,explain:'단면형태가 직사각형인 관로는 만류되기 전이 수리학적으로 유리하다. 만류가 되면 마찰손실 때문에 수 리학적으로 더 불리하기 때문이다. x = ln(0.05)/-(ln(10)/6)... x = 7.81',calc:false},
+  {id:341,subject:3,exam:'2020-06',text:'활성탄 흡착 처리 공정의 효율이 가장 낮은 것은?',choices:['음용수의 맛과 냄새물질 제거 공정','트리할로메탄, 농약, 유기 염소 화합물과 같은 미량 유기 물질 제거 공정','처리된 폐수의 잔존 유기물 제거 공정','산업폐수 및 침출수 처리'],answer:3,explain:'활성탄 흡착 처리법은 유기물 제거에 효과적인 방법으로, 냄새나 맛 유발물질, 잔류농약, 트리할로메탄의 전구물질, 페놀류 등의 미량 유해화합물 처리목적으로 적용되며 합성세제나 색도성분을 처리하는데에도 사용된다.',calc:false},
+  {id:342,subject:3,exam:'2020-06',text:'수처리 과정에서 부유되어 있는 입자의 응집을 초래하는 원인으로 가장 거리가 먼 것은?',choices:['제타 포텐셜의 감소','플록에 의한 체거름 효과','정전기 전하 작용','가교현상'],answer:2,explain:'정전기 전하 작용은 응집 원리가 아님 V = (0.04 * 20 )/(5 * 1.5)... V = 0.1067m^3 HRT = V/Q = 0.1067m^3/ 0.04(m^3/d) * 24hr/d = 64 hr',calc:false},
+  {id:343,subject:3,exam:'2020-06',text:'미처리 폐수에서 냄새를 유발하는 화합물과 냄새의 특징으로 가장 거리가 먼 것은?',choices:['황화수소 - 썩은 달걀냄새','유기 화합물 - 썩은 채소냄새','스카톨 - 배설물 냄새','디아민류 - 생선 냄새'],answer:0,explain:'디아민류: 고기 썩는 냄새 3mg N    1meq N    2meq O2    32mg O2 ------* ------- * -------- * -------  = 13.71 1L       14mg N    1meq N     1meq O2',calc:false},
+  {id:344,subject:3,exam:'2020-06',text:'기체가 물에 녹을 때 Henry법칙이 적용된다. 다음 설명 중 적합하지 않은 것은?',choices:['수온이 증가할수록 기체의 포화용존 농도는 높아진다.','염분의 농도가 증가할수록 기체의 포화용존 농도는 낮아진다.','기체의 포화용존 농도는 기체상태의 분압에 비례한다.','물에 용해되어 이온화하는 기체에는 적용되지 않는다.'],answer:0,explain:'수온이 증가하면 기체의 용해도는 낮아진다. => 포화용존농도는 낮아진다.',calc:false},
+  {id:345,subject:3,exam:'2020-06',text:'심층포기법의 장점으로 옳지 않은 것은?',choices:['지하에 건설되므로 부지면적이 작게 소요되며, 외기와 접하는 부분이 작아 온도 영향이 적다.','고압에서 산소전달을 하므로 산소전달율이 높다.','산소전달율이 높아 MLSS을 높일 수 있어 농도가 높은 폐수를 처리할 수 있고, BOD 용적부하를 증','깊은 하부에 MLSS와 폐수를 같이 순환시키는데 에너지가 적게 소요된다.'],answer:3,explain:'4. 깊은 하부에서 MLSS와 폐수를 같이 순환시키려면 큰 에너지가 필요하다. 그러나 산소전달율이 높기 때문에 그만큼 송기량이 적어진다. 따라서 소비동력 자체는 증가하지 않는다. ln(50/100) = -k*1 k = 0.6931',calc:false},
+  {id:346,subject:3,exam:'2020-06',text:'다음 중 폐수처리방법으로 가장 적절하지 않은 것은?',choices:['시안(CN) 함유 폐수를 처리하기 위해 pH를 4 이하로 조정하고 차아염소산나트륨(NaClO)을 사용','카드뮴(Cd) 함유 폐수를 처리하기 위해 pH를 10 정도로 조정하고 수산화나트륨(NaOH)을 사용하','크롬(Cr) 함유 폐수를 처리하기 위해 pH를 3 정도로 조정하고 황산철(FeSO4)을 사용하였다.','납(Pb) 함유 폐수를 처리하기 위해 pH를 10 정도로 조정하고 수산화나트륨(NaOH)을 사용하였다.'],answer:1,explain:'보기 1.의 산화제를 첨가한 시안 처리방법은 알칼리염소 주입법이다. 이 방법을 사용할 경우, 산화제를 첨 가할 때의 적정 ph농도는 10 ~ 12 (염기성) 을 유지해야한다. 보기 2. 카드뮴의 수산화물 침전법 보기 3. 크롬의 환원침전법',calc:false},
+  {id:347,subject:4,exam:'2020-06',text:'생물학적 질소, 인 제거공정에서 포기조의 기능과 가장 거리가 먼 것은?',choices:['질산화','유기물 제거','탈질','인 과잉섭취'],answer:0,explain:'탈질은 무산소조에서 일어난다. Stokes 침강 공식에 따라서 침강속도는 밀도와 직경의 제곱에 비례, 점성도에 반비례 한다. 따라서 처리수의 점성도가 클수록 입자의 침전속도는 작아진다. 아래와 같은 오류 신고가 있었습니다.',calc:false},
+  {id:348,subject:4,exam:'2020-06',text:'수질분석 관련 용어의 설명 중 잘못된 것은?',choices:['수욕상 또는 수욕중에서 가열한다라 함은 따로 규정이 없는 한 수온 100℃에서 가열함을 뜻한다.','용액의 산성, 중성 또는 알칼리성을 검사할 때는 규정이 없는 한 유리전극법에 의한 pH 미터로 측정','진공이라 함은 15mmH2O 이하의 진공도를 말한다.','분석용 저울은 0.1mg까지 달 수 있는 것이어야 한다.'],answer:1,explain:'진공이라 함은 15mmHg 이하의 진공도를 말한다. V = 0.75*Ve(최대속도) Q = A*V',calc:false},
+  {id:349,subject:4,exam:'2020-06',text:'퇴적물 채취기 중 포나 그랩(ponar grab)에 관한 설명으로 틀린 것은?',choices:['모래가 많은 지점에서도 채취가 잘되는 중력식 채취기 이다.','채취기를 바닥 퇴적물 위에 내린 후 메신저를 투하하면 장방형 상자의 밑판이 닫힌다.','부드러운 펄층이 두터운 경우에는 깊이 빠져 들어가기 때문에 사용하기 어렵다.','원래의 모델은 무게가 무겁고 커서 윈치등이 필요하지만 소형의 포나 그랩은 윈치없이 내리고 올리'],answer:2,explain:'2번 보기에 대한 설명은 에크만 그랩에 대한 설명이다. 포나 그랩은 바닥에 채취기가 닿아 줄의 장력이 감소할 때 상자의 밑판이 닫힌다. 필로리딘다이티오카르바민산 암모늄 추출법에서 사용하는 지시약은 BTB&에틸알코올 용액이다.',calc:false},
+  {id:350,subject:4,exam:'2020-06',text:'자외선/가시선 분광법으로 분석할 때 측정파장이 가장 긴 것은?',choices:['구리','아연','카드뮴','크롬'],answer:1,explain:'구리 440nm 아연 620nm 카드뮴 530nm 크롬 540nm',calc:false},
+  {id:351,subject:4,exam:'2020-06',text:'유리전극에 의한 pH측정에 관한 설명으로 알맞지 않은 것은?',choices:['유리전극을 미리 정제수에 수 시간 담가둔다.','pH 전극 보정 시 측정기의 전원을 켜고 시험 시작까지 30분 이상 예열한다.','전극을 프탈산염 표준용액(pH 6.88) 또는 pH 7.00 표준용액에 담그고 표시된 값을 보정한다.','온도보정 시 pH 4 또는 표준용액에 전극을 담그고 표준용액의 온도를 10℃∼30℃ 사이로 변화시켜'],answer:2,explain:'표준용액기준 7과 4.01 각각 한번씩 측정. 6.88 인산염 표준용액 4.01 프탈산염 표준용액',calc:false},
+  {id:352,subject:4,exam:'2020-06',text:'기체크로마토그래피에 의한 알칼수은의 분석방법으로 ( )에 알맞은 것은?',choices:['㉠ 헥산, ㉡ 염화메틸수은용액','㉠ 헥산, ㉡ 크로모졸브용액','㉠ 벤젠, ㉡ 펜토에이트용액','㉠ 벤젠, ㉡ L-시스테인용액'],answer:0,explain:'알킬수은화합물을 벤젠으로 추출하여 L-시스테인용액에서 선택적으로 역추출하고 다시 벤젠으로 추출 하여 기체크로마토 그래프로 측정하는 방법이다. 유도결합 플라스마 발광분석 장치는 중금속을 아르곤 플라즈마에 주입해 6000~8000K의 들뜬 상태로 만 들어 원자가 바닥 상태로 전이할 때 방출하는 발광선을 측정하는 정량방식이다. 이 때, 플라즈마 발광부 관',calc:false},
+  {id:353,subject:4,exam:'2020-06',text:'다이메틸글리옥심을 이용하여 정량하는 금속은?',choices:['아연','망간','니켈','구리'],answer:2,explain:'자외선/가시선 분광법을 사용할 때 다이메틸글리옥심을 이용하여 정량하는 금속은 니켈이다. 헷갈리는 것 중에 다이에틸다이티오카르바민산나트륨이 있는데 이는 구리를 적정할 때 쓰인다.',calc:false},
+  {id:354,subject:4,exam:'2020-06',text:'이온전극법에서 격막형 전극을 이용하여 측정하는 이온이 아닌 것은?',choices:['F-','CN-','NH4+','NO2-'],answer:0,explain:'유리막 전극 : Na, K, NH_4 측정 격막형 전극: NH_4, NO_2, CN 측정',calc:false},
+  {id:355,subject:4,exam:'2020-06',text:'불소화합물의 분석방법과 가장 거리가 먼 것은? (단, 수질오염공정시험기준 기준)',choices:['자외선/가시선 분광법','이온전극법','이온크로마토그래피','불꽃 원자흡수분광광도법'],answer:3,explain:'불꽃원자흡수분광광도법은 금속이온을 대상으로 하는 분석방법이다. 불소는 금속이 아니므로 적용할 수 없다.',calc:false},
+  {id:356,subject:4,exam:'2020-06',text:'총질소의 측정원리에 관한 내용으로 ( )에 알맞은 것은?',choices:['과황산칼륨','몰리브덴산 암모늄','염화제일주석산','이스코르빈산'],answer:0,explain:'자외선/가시선 분광법 - 총질소 - 산화법 시료 중 모든 질소화합물을 알칼리성 과황산칼륨을 사용하여 120도 부근에서 유기물과 함께 분해하여 질 산 이온으로 산화시킨 후 산성상태로 하여 흡광도를 220nm에서 측정하여 총질소를 정량하는 방법이다. BOD = (DO1-DO2)*P',calc:false},
+  {id:357,subject:4,exam:'2020-06',text:'시료의 용기를 폴리에틸렌병으로 사용하여도 무방한 항목은?',choices:['노말핵산추출물질','페놀류','유기인','음이온계면활성제'],answer:3,explain:'보기 1,2,3 은 오로지 유리 용기만을 사용할 수 있다. 화학적 간섭을 피하는 방법 1.이온교환이나 용매추출 등으로 방해물질 제거 2.과량의 간섭원소 첨가',calc:false},
+  {id:358,subject:4,exam:'2020-06',text:'시료 채취 시 유의사항으로 틀린 것은?',choices:['시료 채취 용기는 시료를 채우기 전에 시료로 3회 이상 씻은 다음 사용한다.','유류 또는 부유물질 등이 함유된 시료는 균질성이 유지될 수 있도록 채취햐야 하며, 침전물 등이 부','심부층의 지하수 채취 시에는 고속양수펌프를 이용하여 채취시간을 최소화함으로써 수질의 변질을','용존가스, 환원성 물질, 휘발성유기화합물, 냄새, 유류 및 수소이온 등을 측정하기 위한 시료를 채취'],answer:3,explain:'심부층 지하수 채취시에는 고속양수펌프가 아닌 저속양수펌프를 사용한다. 시료 중 불소함량이 정량범위를 초과할 경우 탈색현상이 나타날 수 도 있다. 이러한 경우에는 취하는 시료 량을 정량범위 이내에 들도록 감량하거나 희석한 다음 다시 시험한다.',calc:false},
+  {id:359,subject:4,exam:'2020-06',text:'반드시 유리시료용기를 사용하여 시료를 보관해야 하는 항목은?',choices:['염소이온','총인','시안','유기인'],answer:3,explain:'유리시료만을 사용하는 시료: 노말헥산추출물질, 냄새, 잔류염소, 페놀류, 1.4-다이옥산, 유기인, PCB, 물 벼룩 급성 독성, 염화비닐, 브로모폼, 아크릴로니트릴',calc:false},
+  {id:360,subject:1,exam:'2019-03',text:'비점오염방지시설의 유형별 기준 중 자연형 시설이 아닌 것은?',choices:['저류시설','침투시설','식생형 시설','스크린형 시설'],answer:2,explain:'자연형 시설 : 저류시설, 침투시설, 식생형 시설, 인공습지 장치형 시설 : 스크린형 시설, 여과형 시설, 와류형 시설, 생물학적 처리형 시설, 응집 및 침전 처리형 시 설 초과율=(배출농도-방류수 수질기준)/ (배출허용기준-방류수 수질기준)*100',calc:false},
+  {id:361,subject:1,exam:'2019-03',text:'물의 특성에 관한 설명으로 옳지 않은 것은?',choices:['물은 2개의 수소원자가 산소원자를 사이에 두고 104.5° 의 결합각을 가진 구조로 되어 있다.','물은 극성을 띠지 않아 다양한 물질의 용매로 사용된다.','물은 유사한 분자량의 다른 화합물보다 비열이 매우 커 수온의 급격한 변화를 방지해 준다.','물의 밀도는 4℃에서 가장 크다.'],answer:1,explain:'물은 극성을 가진 가장 유효한 용매이다. 물은 극성분자로 용질을 잘 녹이는 가장 유효한 용매이다.',calc:false},
+  {id:362,subject:1,exam:'2019-03',text:'하천의 자정작용에 관한 설명으로 옳지 않은 것은?',choices:['하천의 자정작용은 일반적으로 겨울보다 수온이 상승하여 자정계수(f)가 커지는 여름에 활발하다.','β중부수성 수역(초록색)의 수질은 평지의 일반하천에 상당하며 많은 종류의 조류가 출현한다(Kolk','하천에서 활발한 분해가 일어나는 지대는 혐기성세균이 호기성세균을 교체하며 fungi는 사라진다(','하천이 회복되고 있는 지대의 용존산소가 포화될 정도로 증가한다(Whipple의 4지대 기준)'],answer:0,explain:'여름에 자정작용은 활발하지만 온도가 높아질수록 자정계수는 작아진다.',calc:false},
+  {id:363,subject:1,exam:'2019-03',text:'오염물질의 희석 및 확산작용에 대한 내용으로 틀린 것은?',choices:['수계에 오염물질이 유입되면 Brown 운동, 밀도차, 온도차, 농도차로 인해 발생된 밀도 흐름이나 난','폐쇄성수역은 수질밀도류보다는 난류가 희석에 큰영향을 준다.','바다는 오염물질의 방류지점에서 생긴 분출확산, 밀도류, 밀물, 썰물, 파도, 표층부의 난류확산으로','하천수는 상류에서 하류로의 오염물질 이동이 희석에 큰 영향을 준다.'],answer:1,explain:'폐쇄성수역에서는 난류가 잘 나타나지않음',calc:false},
+  {id:364,subject:1,exam:'2019-03',text:'다음의 기체 법칙 중 옳은 것은?',choices:['Boyle의 법칙 : 일정한 압력에서 기체의 부피는 절대온도에 정비례한다.','Henry의 법칙 : 기체와 관련된 화학반응에서는 기체와 생성되는 기체의 부피 사이에 정수관계가 있','Graham의 법칙 : 기체의 확산속도(조그마한 구멍을 통한 기체의 탈출)는 기체 분자량의 제곱근에','Gay-Lussac의 결합 부피 법칙 : 혼합 기체내의 각 기체의 부분압력은 혼합물 속의 기체의 양에 비'],answer:2,explain:'Boyle의법칙 : 기체의 부피는 압력에 반비례한다. Henry의법칙 : 기체의 용해도는 그 기체에 작용하는 분압에 비례한다. Gay-Lussac의법칙 : 기체반응의 법칙이라고도 하며 두 기체가 서로 과부족없이 반응할 때 이들 기체와 생성된 기체의 부피사이에는 간단한 정수비의 관계가 성립된다',calc:false},
+  {id:365,subject:1,exam:'2019-03',text:'수은(Hg) 중독과 관련이 없는 것은?',choices:['난청, 언어장애, 구심성 시야협착, 정신장애를 일으킨다.','이따이이따이병을 유발한다.','유기수은은 무기수은 보다 독성이 강하며 신경계통에 장해를 준다.','무기수은은 황화물 침전법, 활성탄 흡착법, 이온교환법 등으로 처리할 수 있다.'],answer:1,explain:'수은의 배출원은 전해소다공장, 정련공장, 농약공장, 금속광산이며 피해 및 영향은, 언어장애, 지각장애, 보행장애, 청각장애를 일으키며 대표적인 예로 미나마타병과 헌터-루셀 증후군이다. 처리법은 황화물침전 법, 이온교환법, 아말감법, 흡착법으로 처리할 수 있다. 이따이이따이병은 카드뮴(Cd)과 관련있다.',calc:false},
+  {id:366,subject:1,exam:'2019-03',text:'지하수의 특성에 관한 설명으로 옳지 않은 것은?',choices:['염분함량이 지표수보다 낮다.','주로 세균(혐기성)에 의한 유기물 분해작용이 일어난다.','국지적인 환경조건의 영향을 크게 받는다.','빗물로 인하여 광물질이 용해되어 경도가 높다.'],answer:0,explain:'지하수의 특징 ① 국지적인 환경조건의 영향을 크게 받는다. ② 주로 세균에 의한 유기물 분해 작용이 일어난다. ③ 지표수보다 수질 변동이 적으며, 유속이 느리고, 수온 변화가 적다.',calc:false},
+  {id:367,subject:1,exam:'2019-03',text:'호수의 성층현상에 대해 틀린 것은?',choices:['수심에 따른 온도변화로 인해 발생되는 물의 밀도차에 의하여 발생한다.','Thermocline(약층)은 순환층과 정체층의 중간층으로 깊이에 따른 온도변화가 크다.','봄이 되면 얼음이 녹으면서 수표면 부근의 수온이 높아지게 되고 따라서 수직운동이 활발해져 수질','여름이 되면 연직에 따른 온도경사와 용존산소 경사가 반대 모양을 나타낸다.'],answer:3,explain:'여름이 되면 연직에 따른 온도경사와 용존산소 경사가 같은 모양을 나타낸다',calc:false},
+  {id:368,subject:1,exam:'2019-03',text:'해수의 특성에 대한 설명으로 옳은 것은?',choices:['염분은 적도해역과 극해역이 다소 높다.','해수의 주요성분 농도비는 수온, 염분의 함수로 수심이 깊어질수록 증가한다.','해수의 Na/Ca비는 3~4정도로 담수보다 매우 높다.','해수 내 전체 질소 중 35% 정도는 암모니아성 질소, 유기질소 형태이다.'],answer:3,explain:'해수의 특징 ①염소 이온(Cl)>나트륨 이온(Na)>황산이온(So)>마그네슘 이온(Mg) >칼슘이온(Ca)>칼륨 이온(K)>중탄산 이온(HCO) ② 해수의 PH는 8.2, 염분은 적도 > 극지방',calc:false},
+  {id:369,subject:1,exam:'2019-03',text:'수질오염물질별 인체영향(질환)이 틀리게 짝지어진 것은?',choices:['비소 : 반상치(법랑반점)','크롬 : 비중격 연골천공','아연 : 기관지 자극 및 폐염','납 : 근육과 관절의 장애'],answer:0,explain:'비소 : 빈혈, 구토, 설사, 수족의 지각장애, 흑피증',calc:false},
+  {id:370,subject:1,exam:'2019-03',text:'탈질화와 가장 관계가 깊은 미생물은?',choices:['Nitrosomonas','Pseudomonas','Thiobacillus','Vorticella'],answer:3,explain:'탈질화 미생물 : Pseudomonas, Micrococcus, Achromobacter, Bacillus Nitrosomonas : 질산화세균 (질산화 1단계) Thicbacillus : 관정부식 유발 미생물 Vorticella : 슬러지 상태 양호시 출현 미생물',calc:false},
+  {id:371,subject:1,exam:'2019-03',text:'물의 순환과 이용에 관한 설명으로 틀린 것은?',choices:['지구전체의 강수량은 대략 4×1014m3/년으로서 그 중 약 1/4 가량이 육지에 떨어진다.','지구상의 물의 전체량의 약 97%가 해수이다.','담수중 50%가 곧 바로는 이용이 불가능하다.','담수중 하천수가 차지하는 비율은 약 0.32% 정도이다.'],answer:2,explain:'담수 중 11%가 곧바로 이용가능',calc:false},
+  {id:372,subject:1,exam:'2019-03',text:'이상적 plug ﬂow에 관한 내용으로 옳은 것은?',choices:['분산 = 0, 분산수 = 0','분산 = 0, 분산수 = 1','분산 = 1, 분산수 = 0','분산 = 1, 분산수 = 1'],answer:3,explain:'이상적 혼합: 분산: 1, 분산수: 무한대, Morrill 지수: 클수록 근접, 지체시간 0 이상적 마개흐름(plug flow): 분산 0, 분산수: 0, Morril 지수: 1에 가까울 수록, 지체시간: 이론적 체류시 간과 같을 때 0.054mol/L * 0.25L * 95.3g/mol = 약 1.3g',calc:false},
+  {id:373,subject:2,exam:'2019-03',text:'NBDCOD가 0일 경우 탄소(C)의 최종 BOD와 TOC 간의 비(BODu/TOC)는?',choices:['0.37','1.32','1.83','2.67'],answer:3,explain:'탄소 원자량 : 12   -> TOC 산소 분자량 : 16*2 = 32 -> BODu BODu/TOC = 32/12 = 2.67',calc:false},
+  {id:374,subject:2,exam:'2019-03',text:'말굽형 하수관거의 장점으로 옳지 않은 것은?',choices:['대구경 관거에 유리하며 경제적이다.','수리학적으로 유리하다.','단면형상이 간단하여 시공성이 우수하다.','상반부의 아치작용에 의해 역학적으로 유리하다.'],answer:2,explain:'단면현상이 복잡하기 때문에 시공성이 열악하다',calc:false},
+  {id:375,subject:2,exam:'2019-03',text:'강우강도에 대한 설명 중 틀린 것은?',choices:['강우강도는 그 지점에 내린 우량을 mm/hr단위로 표시한 것이다.','확률강우강도는 강우강도의 확률적 빈도를 나타낸 것이다.','범람의 피해가 적을 것으로 예상될 때는 재현기간 2~5년의 확률강우강도를 채택한다.','강우강도가 큰 강우일수록 빈도가 높다.'],answer:3,explain:'강우강도가 큰 강우일 수록 빈도가 낮다',calc:false},
+  {id:376,subject:2,exam:'2019-03',text:'하수배제 방식 중 합류식에 관한 설명으로 알맞지 않은 것은?',choices:['관로계획 : 우수를 신속히 배수하기 위해 지형조건에 적합한 관거망이 된다.','청천시의 월류 : 없음','관거오접 : 없음','토지이용 : 기존의 측구를 폐지할 경우는 뚜껑의 보수가 필요하다.'],answer:3,explain:'토지이용 : 기존의 측구를 폐지할 경우는 도로폭을 유효하게 이용할 수 있다.',calc:false},
+  {id:377,subject:2,exam:'2019-03',text:'급속여과지에 대한 설명으로 잘못된 것은?',choices:['여과 및 여과층의 세척이 충분하게 이루어질 수 있어야 한다.','급속여과지는 중력식과 압력식이 있으며 압력식을 표준으로 한다.','여과면적은 계획정수량을 여과속도로 나누어 계산한다.','여과지 1지의 여과면적은 150m2이하로 한다.'],answer:1,explain:'급속여과지는 중력식을 표준으로 한다.',calc:false},
+  {id:378,subject:2,exam:'2019-03',text:'상수처리를 위한 응집지의 플록형성지에 대한 설명중 틀린 것은?',choices:['플록형성지는 혼화지와 침전지 사이에 위치하고 침전지에 붙여서 설치한다.','플록형성시간은 계획정수량에 대하여 20∼40분간을 표준으로 한다.','플록형성지 내의 교반강도는 하류로 갈수록 점차 감소시키는 것이 바람직하다.','플록형성지에 저류벽이나 정류벽 등을 설치하면 단락류가 생겨 유효저류시간을 줄일 수 있다.'],answer:3,explain:'단락류를 생기지 않도록 해야함',calc:false},
+  {id:379,subject:2,exam:'2019-03',text:'하수처리계획에서 계획오염부하량 및 계획유입수질에 관한 설명으로 틀린 것은?',choices:['계획유입수질 : 하수의 계획유입수질은 계획오염부하량을 계획1일평균오수량으로 나눈값으로 한다.','공장폐수에 의한 오염부하량 : 폐수배출부하량이 큰 공장은 업종별 오염부하량 원단위를 기초로 추','생활오수에 의한 오염부하량 : 1인1일당 오염부하량 원단위를 기초로 하여 정한다.','관광오수에 의한 오염부하량 : 당일관광과 숙박으로 나누고 각각의 원단위에서 추정한다.'],answer:1,explain:'폐수배출부하량이 큰 공장은 부하량을 실측하는 것이 바람직하다(개개의 폐수량을 조사) 원심펌프- 원심력작용 사류펌프- 원심력과 베인의 양력작용 축류펌프- 베인의 양력작용',calc:false},
+  {id:380,subject:2,exam:'2019-03',text:'상수시설 중 배수지에 관한 설명으로 틀린 것은?',choices:['유효용량은 시간변동조정용량, 비상대처용량을 합하여 급수구역의 계획1일최대급수량의 12시간분','부득이한 경우 외에는 배수지를 급수지역의 중앙 가까이 설치한다.','유효수심은 1~2m 정도를 표준으로 한다.','자연유하식 배수지의 표고는 최소동수압이 확보되는 높이여야 한다.'],answer:2,explain:'유효수심은 3~6m를 표준으로 한다.',calc:false},
+  {id:381,subject:2,exam:'2019-03',text:'펌프의 운전 시 발생되는 현상이 아닌 것은?',choices:['공동현상','수격작용(수충작용)','노크현상','맥동현상'],answer:3,explain:'펌프운전시 발생되는 현상 : 캐비테이션(공동현상), 서징, 수격작용 우수의 양Q=1/360(CIA) C=유출계수, I=강우강도(mm/hr), A=면적(1ha=100m*100m) Q=(0.65*(3mm/min*60min/hr)*100ha)/360=32.5',calc:false},
+  {id:382,subject:2,exam:'2019-03',text:'표준활성슬러지법에 관한 내용으로 틀린 것은?',choices:['수리학적 체류시간은 6~8시간을 표준으로 한다.','반응조내 MLSS 농도는 1500~2500mg/L 를 표준으로 한다.','포기조의 유효수심은 심층식의 경우 10m를 표준으로 한다.','포기조 여유고는 표준식은 30~60cm 정도를 표준으로 한다.'],answer:3,explain:'포기조의 여유고는 표준식은 80cm, 심층식은 100cm를 표준 표준활성슬러지법 ●표준식 -유효수심:4~6m',calc:false},
+  {id:383,subject:2,exam:'2019-03',text:'상수처리를 위한 침사지 구조에 관한 기준으로 옳지 않은 것은?',choices:['지의 상단높이는 고수위보다 0.3~0.6m의 여유고를 둔다.','지내 평균유속은 2~7cm/s를 표준으로 한다.','표면부하율은 200~500mm/min을 표준으로 한다.','지의 유효수심은 3~4m를 표준으로 하고 퇴사심도를 0.5~1m로 한다.'],answer:0,explain:'침사지는 0.6~1m 정도의 여유를준다.',calc:false},
+  {id:384,subject:2,exam:'2019-03',text:'호소, 댐을 수원으로 하는 취수문에 관한 설명으로 틀린 것은?',choices:['일반적으로 중, 소량 취수에 쓰인다.','일반적으로 취수량을 조정하기 위한 수문 또는 수위조절판(stop log)를 설치한다.','파랑, 결빙 등의 기상조건에 영향이 거의 없다.','하천의 표류수나 호소의 표층수를 취수하기 위하여 물가에 만들어지는 취수시설이다.'],answer:2,explain:'파랑, 결빙의 영향을 직접 받는다. 특히 결빙에 의하여 취수가 불가능해지는 경우가 있기 때문에 주의를 요한다. 계획급수량 결정시, 기초자료가 없을경우 계획 1인 1일 평균사용수량 으로 결정한다.',calc:false},
+  {id:385,subject:2,exam:'2019-03',text:'정수방법인 완속여과방식에 관한 설명으로 틀린 것은?',choices:['약품처리가 필요 없다.','완속여과의 정화는 주로 생물작용에 의한 것이다.','비교적 양호한 원수에 알맞은 방식이다.','소요 부지면적이 적다.'],answer:3,explain:'완속여과방식의 소요 부지면적은 넓다',calc:false},
+  {id:386,subject:2,exam:'2019-03',text:'화학적 응집에 영향을 미치는 인자의 설명 중 잘못된 내용은?',choices:['수온 : 수온 저하 시 플록형성에 소요되는 시간이 길어지고, 응집제의 사용량도 많아진다.','pH : 응집제의 종류에 따라 최적의 pH조건을 맞추어 주어야 한다.','알칼리도 : 하수의 알칼리도가 많으면 플록을 형성하는데 효과적이다.','응집제 양 : 응집제 양을 많이 넣을수록 응집효율이 좋아진다.'],answer:3,explain:'4.  응집제 양 : 응집제는 최적의 양을 넣어야 응집효율이 좋아진다.',calc:false},
+  {id:387,subject:2,exam:'2019-03',text:'토출량 20m3/min, 전양정 6m, 회전속도 1200rpm인 펌프의 비교회전도는?',choices:['약 1300','약 1400','약 1500','약 1600'],answer:1,explain:'Ns = N*Q^0.5*H^0.75 Ns=1200 * 20^0.5 * 6^0.75 = 1399 = 약1400',calc:false},
+  {id:388,subject:3,exam:'2019-03',text:'정수시설 중 플록형성지에 관한 설명으로 틀린 것은?',choices:['기계식교반에서 플록큐레이터(ﬂocculator)의 주변속도는 5~10cm/sec를 표준으로 한다.','플록형성시간은 계획정수량에 대하여 20~40분간을 표준으로 한다.','직사각형이 표준이다.','혼화지와 침전지 사이에 위치하고 침전지에 붙여서 설치한다.'],answer:0,explain:'기계식 : 15~80 cm/sec',calc:false},
+  {id:389,subject:3,exam:'2019-03',text:'염소 소독의 장ㆍ단점으로 틀린 것은? (단, 자외선 소독과 비교 기준)',choices:['소독력 있는 잔류염소를 수송관거 내에 유지시킬 수 있다.','처리수의 총용존고형물이 감소한다.','염소접촉조로부터 휘발성 유기물이 생성된다.','처리수의 잔류독성이 탈염소과정에 의해 제거되어야 한다.'],answer:1,explain:'처리수의 총용존고형물이 증가한다.',calc:false},
+  {id:390,subject:3,exam:'2019-03',text:'활성슬러지법과 비교하여 생물막 공법의 특징이 아닌 것은?',choices:['적은 에너지를 요구한다.','단순한 운전이 가능하다.','2차침전지에서 슬러지 벌킹의 문제가 없다.','충격독성부하로부터 회복이 느리다.'],answer:3,explain:'충격독성하부로부터 회복이 빠르다.',calc:false},
+  {id:391,subject:3,exam:'2019-03',text:'질산화 미생물의 전자공여체로 가장 거리가 먼 것은?',choices:['메탄올','암모니아','아질산염','환원된 무기성 화합물'],answer:1,explain:'메탄올은 탈질 작용에 이용된다 5CH_3OH + 6NO_3^- ->   3N_2 + 5CO_2 + 7H_2O 2000 / (9576-2000) X 100',calc:false},
+  {id:392,subject:3,exam:'2019-03',text:'정수처리시 적용되는 랑게리아 지수에 관한 내용으로 틀린 것은?',choices:['랑게리아 지수란 물의 실제 pH와 이론적 pH(pHs : 수중의 탄산칼슘이 용해되거나 석출되지 않는','랑게리아 지수가 양(+)의 값으로 절대치가 클수록 탄산칼슘피막 형성이 어렵다.','랑게리아 지수가 음(-)의 값으로 절대치가 클수록 물의 부식성이 강하다.','물의 부식성이 강한 경우의 랑게리아 지수는 pH, 칼슘경도, 알갈리도를 증가시킴으로써 개선할 수'],answer:1,explain:'랑게리아 지수가 0 이상이면 탄산칼슘이 과포화 상태로 탄산칼륨 스케일링이 생성될 가능성이 크다.',calc:false},
+  {id:393,subject:3,exam:'2019-03',text:'하수고도처리 공법 중 생물학적 방법으로 질소와 인을 동시에 제거하기 위한 것은?',choices:['Phostrip','4단계 Bardenpho','A/O','A2/O'],answer:3,explain:'1. Phostrip : 인 제거 2. 4단계 바덴포 : 질소 제거 3. A/O공정 : 인 제거 -------------------------',calc:false},
+  {id:394,subject:3,exam:'2019-03',text:'연속회분식반응조(Sequencing Batch Reactor)에 관한 설명으로 틀린 것은?',choices:['하나의 반응조 안에서 호기성 및 혐기성 반응 모두를 이룰수 있다.','별도의 침전조가 필요없다.','기본적인 처리계통도는 5단계로 이루어지며 요구하는 유출수에 따라 운전 Mode를 채택할 수 있다.','기존 활성슬러지 처리에서의 시간개념을 공간개념으로 전환한 것이라 할 수 있다.'],answer:3,explain:'기존 활성슬러지 처리에서의 공간개념을 시간개념으로 전환한 것이라 할 수 있다.',calc:false},
+  {id:395,subject:3,exam:'2019-03',text:'분리막을 이용한 다음의 폐수처리방법 중 구동력이 농도차에 의한 것은?',choices:['역삼투(Reverse Osmosis)','투석(Dialysis)','한외여과(UItraﬁltration)','정밀여과(Microﬁltration)'],answer:2,explain:'역삼투, 한외여과, 정밀여과 : 정수압차 투석 : 농도차 제1형침전(독립침전) : 응결되지 않은 독립인자의 침전 제2형침전(응결침전) : 현탁입자가 침전하면서 floc을 형성하면서 침전속도 증가',calc:false},
+  {id:396,subject:3,exam:'2019-03',text:'하수소독시 적용되는 UV 소독방법에 관한 설명으로 틀린 것은?',choices:['pH 변화에 관계없이 지속적인 살균이 가능하다.','유량과 수질의 변동에 대해 적응력이 강하다.','설치가 복잡하고, 전력 및 램프 수가 많이 소요되므로 유지비가 높다.','물이 혼탁하거나 탁도가 높으면 소독능력에 영향을 미친다.'],answer:2,explain:'설치가 간단하고 전력 및 램프수가 적게 소요되므로 유지비가 낮다. 10^-2.5*500+10^-6.5*10000/500+10000=1.509*10^-4 -log(1.509*10^-4)=3.82 슬러지양 100 가정',calc:false},
+  {id:397,subject:3,exam:'2019-03',text:'생물화학적 인 및 질소 제거 공법 중 인제거만을 주목적으로 개발된 공법은?',choices:['Phostrip','A2/O','UCT','Bardenpho'],answer:0,explain:'1.phostrip - 인 제거 2.a^2/O - 질소,인 제거 3.UCT - 질소,인 제거 4.Bardenpho - 질소,인 제거(4단계-질소 제거 5단계-질소,인 제거)',calc:false},
+  {id:398,subject:3,exam:'2019-03',text:'펜톤처리공정에 관한 설명으로 가장 거리가 먼 것은?',choices:['펜톤시약의 반응시간은 철염과 과산화수소수의 주입 농도에 따라 변화를 보인다.','펜톤시약을 이용하여 난분해성 유기물을 처리하는 과정은 대체로 산화반응과 함께 pH조절, 펜톤산','펜톤시약의 효과는 pH 8.3~10 범위에서 가장 강력한 것으로 알려져 있다.','폐수의 COD는 감소하지만 BOD는 증가할 수 있다.'],answer:2,explain:'효과는 pH 3~5에서 가장 강력',calc:false},
+  {id:399,subject:3,exam:'2019-03',text:'생물학적 폐수처리 반응과 그것을 주도하는 미생물 분류 중에서 틀린 것은?',choices:['활성 슬러지 : 화학유기 영양계','질산화 : 화학무기 영양계','탈질산화 : 화학유기 영양계','회전원판(생물막) : 광유기 영양계'],answer:3,explain:'회전원판(생물막) : 화학유기 영양계 sol) 2 x (12+14) : 5 x (23+35.5+16) 0.15 x 300  :    X',calc:false},
+  {id:400,subject:4,exam:'2019-03',text:'유해물질인 시안(CN)처리 방법에 관한 설명으로 틀린 것은?',choices:['오존산화법: 오존은 알칼리성 영역에서 시안화합물을 N2로 분해시켜 무해화 한다.','전해법: 유가(有價)금속류를 회수할 수 있는 장점이 있다.','충격법: 시안을 pH 3 이하의 강산성 영역에서 강하게 폭기하여 산화하는 방법이다.','감청법: 알칼리성 영역에서 과잉의 황산알루미늄을 가하여 공침시켜 제거하는 방법이다.'],answer:3,explain:'감청법: 과잉의 철을 가하여 불용성의 감청을 생성해 침전분리 600000L를 하루에 처리하니 600000L/day 라고 할 수 있음 따라서 막면적(m2) = 600000L/day ÷0.2068L/(day*m2)(kPa) ÷ (2400-310)(kPa)',calc:false},
+  {id:401,subject:4,exam:'2019-03',text:'기체크로마토그래피법에서 검출기와 사용되는 운반가스를 틀리게 짝지은 것은?',choices:['열전도도형 검출기 - 질소','열전도도형 검출기 - 헬륨','전자포획형 검출기 - 헬륨','전자포획형 검출기 - 질소'],answer:0,explain:'열전도도형 검출기(TCD)- 수소, 헬륨 Na2S2O3 0.025N = 0.02 O2',calc:false},
+  {id:402,subject:4,exam:'2019-03',text:'시료채취 방법 중 옳지 않은 것은?',choices:['지하수 시료는 물을 충분히 퍼낸 다음, pH와 전기전도도를 연속적으로 측정하여 각각의 값이 평형을','시료채취 용기에 시료를 채울 때에는 어떠한 경우라도 시료교란이 일어나서는 안된다.','시료채취량은 시험항목 및 시험횟수에 따라 차이가 있으나 보통 1~2 L 정도이어야 한다.','채취용기는 시료를 채우기 전에 대상시료로 3회 이상 씻은 다음 사용한다.'],answer:2,explain:'보통 3-5L',calc:false},
+  {id:403,subject:4,exam:'2019-03',text:'수질오염공정시험기준 상 총대장균군의 시험방법이 아닌 것은?',choices:['현미경계수법','막여과법','시험관법','평판집락법'],answer:0,explain:'[총대장균군의 시험방법] ①막여과법 ②시험관법 ③평판집락법',calc:false},
+  {id:404,subject:4,exam:'2019-03',text:'시료의 최대보존기간이 다른 측정 항목은?',choices:['시안','노말헥산추출물질','화학적산소요구량','총인'],answer:0,explain:'시안 : 14일 노말헥산추출물질, 화학적산소요구량, 총인 : 28일',calc:false},
+  {id:405,subject:4,exam:'2019-03',text:'총대장균군-시험관의 정량방법에 대한 설명으로 틀린 것은?',choices:['용량 1~25mL 의 멸균된 눈금피펫이나 자동피펫을 사용한다.','안지름 6mm, 높이 30mm정도의 다람시험관을 사용한다.','고리의 안지름이 10mm인 백금이를 사용한다.','배양온도를 (35±0.5)℃로 유지할 수 있는 배양기를 사용한다.'],answer:2,explain:'고리의 안지름이 3mm인 백금이를 사용한다.',calc:false},
+  {id:406,subject:4,exam:'2019-03',text:'냄새 측정시 잔류염소 제거를 위해 첨가하는 용액은?',choices:['L-아스코빈산나트륨','티오황산나트륨','과망간산칼륨','질산은'],answer:0,explain:'잔류염소 냄새는 측정에서 제외하며 잔류염소가 존재하면 티오황산나트륨용액을 첨가하여 잔류염소를 제거한다. 티오황산나트륨용액 1mL는 잔류염소 농도가 1mg/L인 시료 500mL의 잔류염소를 제거할 수 있다. 2mg/L 이상의 크롬산은 종말점에서 간섭을 하는데 이때 염화바륨을 가하여 침전시켜 제거한다.',calc:false},
+  {id:407,subject:4,exam:'2019-03',text:'자외선/가시선 분광법을 적용한 페놀류 측정에 관한 내용으로 옳지 않는 것은?',choices:['붉은 색의 안티피린계 색소의 흡광도를 측정한다.','수용액에서는 510nm, 클로로용액에서는 460nm에서 측정한다.','정량한계는 클로로폼 추출법일 때 0.05mg, 직접법 일 때 0.5mg이다.','시료 중의 페놀을 종류별로 구분하여 정량할 수 없다.'],answer:0,explain:'3.정량한계는 클로로폼 추출법일 때 0.005mg, 직접법 일 때 0.05mg이다. - BOD 검정용 시료는 최대보존기간이 48시간(6시간 권장) - COD 검정용 시료는 황산을 가하여 pH2 이하로',calc:false},
+  {id:408,subject:4,exam:'2019-03',text:'용존산소의 정량에 관한 설명으로 틀린 것은?',choices:['전극법은 산화성물질이 함유된 시료나 착색된 시료에 적합하다.','일반적으로 온도가 일정할 때 용존산소 포화량은 수중의 염소이온량이 클수록 크다','시료가 착색, 현탁된 경우는 시료에 칼륨명반 용액과 암모니아수를 주입한다.','Fe(Ⅲ) 100~200 mg/L가 함유되어 있는 시료의 경우 황산을 첨가하기 전에 플루오린화칼륨용액 1'],answer:3,explain:'용존산소 포화량은 온도가 일정할 때 염소이온량이 작을수록 크며, 염소이온량이 일정할 때 온도가 낮을 수록 크다 [비소의 측정방법] ① 수소화물생성 - 원자흡수분광도법',calc:false},
+  {id:409,subject:4,exam:'2019-03',text:'다음 설명 중 틀린 것은?',choices:['현장 이중시료는 동일 위치에서 동일한 조건으로 중복 채취한 시료를 말한다.','검정곡선은 분석물질의 농도변화에 따른 지시값을 나타낸 것을 말한다.','정량범위라 함은 시험분석 대상을 정량화할 수 있는 측정값을 말한다.','기기검출한계(IDL)란 시험분석 대상물질을 기기가 검출할 수 있는 최소한의 농도 또는 양을 의미한'],answer:0,explain:'정량범위가 아니라 정량한계(LOQ) (8.6-3.6)×30-(7.5-3.7)÷10×(30-1)',calc:false},
+  {id:410,subject:4,exam:'2019-03',text:'질산성질소의 자외선/가시선 분광법 중 부루신법에 대한 설명으로 틀린 것은?',choices:['이 시험기준은 지표수, 지하수, 폐수 등에 적용할 수 있으며 정량한계는 0.1mg/L이다','용존 유기물질이 황산산성에서 착색이 선명하지 않을 수 있으며 이때 부루신설퍼닐산을 포함한 모든','바닷물과 같이 염분이 높은 경우 바탕시료와 표준용액에 염화나트륨용액(30%)을 첨가하여 염분의','잔류염소는 이산화비소산나트륨으로 제거할 수 있다.'],answer:1,explain:'부루신설퍼닐산을 "제외한" 모든 시약을 추가로 첨가',calc:false},
+  {id:411,subject:4,exam:'2019-03',text:'COD 측정에 있어서 COD값에 영향을 주는 인자가 아닌 것은?',choices:['온도','MnO4-농도','황산량','가열시간'],answer:1,explain:'COD측정시 영향을 주는 인자 염소이온, 아질산염, 제일철이온, 온도, 아황산염, 과망간산칼륨 용액, 가열시간, 황산 등',calc:false},
+  {id:412,subject:4,exam:'2019-03',text:'수질오염공정시험기준에서 사용하는 용어에 대한 설명으로 틀린 것은?',choices:['“항량으로 될 때까지 건조한다”라 함은 같은 조건에서 1시간 더 건조할 때 전후 무게차가 g당 0.3mg','시험조작 중 “즉시”란 30초 이내에 표시된 조작을 하는 것을 뜻한다.','“기밀용기”라 함은 취급 또는 저장하는 동안에 밖으로부터의 공기 또는 다른 가스가 침입하지 아니하','“방울수”라 함은 0℃에서 정제수 20방울을 적하할 때 그 부피가 약 1mL 되는 것을 뜻한다.'],answer:3,explain:'방울수 : 20°c에서 정제수 20방울 정답: 4번',calc:false},
+  {id:413,subject:4,exam:'2019-03',text:'자외선/가시선 분광법에 관한 설명으로 틀린 것은?',choices:['측정파장은 원칙적을 최고의 흡광도가 얻어질 수 있는 최대 흡수파장을 선정한다.','대조액은 일반적으로 용매 또는 바탕시험액을 사용한다.','측정된 흡광도는 되도록 1.0~1.5의 범위에 들도록 시험용액의 농도 및 흡수셀의 길이를 선정한다.','부득이 흡광도를 0.1 미만에서 측정할 때는 눈금 확대기를 사용하는 것이 좋다.'],answer:3,explain:'측정된 흡광도는 되도록 0.2~0.8의 범위에 들도록 흡수셀의 길이를 선정한다 메틸렌블루와 반응시켜 생성된 청색의 착화합물을 클로로폼으로 추출하여 흡광도를 650nm에서 측정하 는 방법이다.',calc:false},
+  {id:414,subject:1,exam:'2018-08',text:'하천의 등급별 수질 및 수생태계 상태를 바르게 설명한 것은?',choices:['매우좋음 : 용존산소가 많은 편이고 오염물질이 거의 없는 청정상태에 근접한 상태계로 여과ㆍ침전','좋음 : 오염물질은 있으나 용존산소가 많은 상태의 다소 좋은 생태계로 여과ㆍ침전ㆍ살균 등 일반적','보통 : 용존산소가 소모되는 일반 생태계로 여과, 침전, 활성탄 투입, 살균 등 고도의 정수처리 후 생','나쁨 : 상당량의 오염물질로 인하여 용존산소가 소모되는 생태계로 농업용수로 사용하거나, 여과, 침'],answer:2,explain:'1. 좋음 2. 약간좋음 4. 약간나쁨 6가크롬 : 0.05이하',calc:false},
+  {id:415,subject:1,exam:'2018-08',text:'수은(Hg)에 관한 설명으로 틀린 것은?',choices:['아연정련업, 도금공장, 도자기제조업에서 주로 발생한다.','대표적 만성질환으로는 미나마타병, 헌터-루셀 증후군이 있다.','유기수은은 금속상태의 수은보다 생물체내에 흡수력이 강하다.','상온에서 액체상태로 존재하며, 인체에 노출시 중추신경계에 피해를 준다.'],answer:0,explain:'수은계, 압력계 제조업에서 수은 발생',calc:false},
+  {id:416,subject:1,exam:'2018-08',text:'알칼리도에 관한 방응 중 가장 부적절한 것은?',choices:['CO2+H2O→H2CO3→HCO3-+H+','HCO3→CO3-2+H+','CO3-2+H2O→HCO3-+OH-','HCO3-+H2O→H2CO3+OH-'],answer:3,explain:'CO2+H2O⟷H2CO3 H2CO3⟷HCO3−+H+ HCO3−⟷CO32−+H+',calc:false},
+  {id:417,subject:1,exam:'2018-08',text:'미생물 세포의 비증식 속도를 나타내는 식에 대한 설명이 잘못된 것은?',choices:['μmax는 최대 비증식 속도로 시간 -1단위이다.','Ks는 반속도상수로서 최대성장률이 1/2일 때의 기질의 농도이다.','μ=μmax인 경우, 반응속도가 기질농도에 비례하는 1차 반응을 의미한다.','[S]는 제한기질 농도이고 단위는 mg/L이다.'],answer:2,explain:'µ=µmax일 경우의 0차 반응 인 걸로 알고 있어요',calc:false},
+  {id:418,subject:1,exam:'2018-08',text:'소수성 콜로이드의 특성으로 틀린 것은?',choices:['물속에서 에멀션으로 존재함','염에 아주 민감함','물에 반발하는 성질이 있음','소량의 염을 첨가하여도 응결 침전됨'],answer:3,explain:'친수성 콜로이드는 유탁상태(에멀전)으로 존재 소수성 콜로이드는 현탁질(서스펜션)상태 BOD 1450kg -> 필요 산소량 1450kg 1450kg/(0.236kg/m3)=6,144.068m3',calc:false},
+  {id:419,subject:1,exam:'2018-08',text:'2000mg/L Ca(OH)2 용액의 pH는? (단, Ca(OH)2는 완전 해리, Ca 원자량=40)',choices:['12.13','12.43','12.73','12.93'],answer:2,explain:'2000 mg/L = 2 g/L Ca(OH)2의 몰질량 = 40 + 2(16+1) = 74 g/mol 이므로, 2 g Ca(OH)2의 몰수를 계산하면, 2 g / (74 g/mol) = 0.027027 mol Ca(OH)2 몰농도 = 0.027027 mol / 1 L = 0.027027 M Ca(OH)2',calc:true},
+  {id:420,subject:1,exam:'2018-08',text:'성층현상에 관한 설명으로 틀린 것은?',choices:['수심에 따른 온도변화로 발생되는 물의 밀도차에 의해 발생된다.','봄, 가을에는 저수지의 수직혼합이 활발하여 분명한 층의 구별이 없어진다.','여름에는 수심에 따른 연직온도경사와 산소구배가 반대 모양을 나타내는 것이 특징이다.','겨울과 여름에는 수직운동이 없어 정체현상이 생기며 수심에 따라 온도와 용존산소농도의 차이가 크'],answer:2,explain:'연직온도경사와 산소구배가 같은모양입니다',calc:false},
+  {id:421,subject:1,exam:'2018-08',text:'다음 반응식 중 환원상태가 되면 가장 나중에 일어나는 반응은? (단, ORP값 기준)',choices:['SO42-→S2-','NO2-→NH3','Fe3+→Fe2+','NO3-→NO2-'],answer:0,explain:'전자수용순서 : 산소 > 질산태 질소 > 망간, 철 수산화물 > 황산이온',calc:false},
+  {id:422,subject:1,exam:'2018-08',text:'수원의 종류 중 지하수에 관한 설명으로 틀린 것은?',choices:['수온 변동이 적고 탁도가 낮다.','미생물이 거의 없고 오염물이 적다.','유속이 빠르고, 광역적인 환경조건의 영향을 받아 정화되는데 오랜 기간이 소요된다.','무기염류 농도와 경도가 높다.'],answer:2,explain:'지하수의 경우 유속이 느려요',calc:false},
+  {id:423,subject:1,exam:'2018-08',text:'Fungi(균류, 곰팡이류)에 관한 설명으로 틀린 것은?',choices:['원시적 탄소동화작용을 통하여 유기물질을 섭취하는 독립영양계 생물이다.','폐수내의 질소와 용존산소가 부족한 경우에도 잘 성장하며 pH가 낮은 경우에도 잘 성장한다.','구성물질의 75~80%가 물이며 C10H17O6N을 화학구조식으로 사용한다.','폭이 약 5~10μm로서 현미경으로 쉽게 식별되며 슬러지팽화의 원인이 된다.'],answer:0,explain:'균류는 유기뮬을 섭취하는 호기성 종속 미생물',calc:false},
+  {id:424,subject:1,exam:'2018-08',text:'부영양호의 수면관리 대책으로 틀린 것은?',choices:['수생식물의 이용','준설','약품에 으한 영양염류의 침전 및 황산동 살포','N, P 유입량의 증대'],answer:1,explain:'N,P 유입량을 증대시키면 부영양화가 더 진행됨. 4*표면장력*cos(접촉각)/(비중량*직경)',calc:false},
+  {id:425,subject:1,exam:'2018-08',text:'알칼리도가 수질환경에 미치는 영향에 관한 설명으로 가장 거리가 먼 것은?',choices:['높은 알칼리도를 갖는 물은 쓴맛을 낸다.','알칼리도가 높은 물은 다른 이온과 반응성이 좋아 관내에 scale을 형성할 수 있다.','알칼리도는 물 속에서 수중생물의 성장에 중요한 역할을 함으로써 물의 생산력을 추정하는 변수로','자연수 중 알칼리도의 형태는 대부분 수산화물의 형태이다.'],answer:3,explain:'자연수 중 알칼리도의 형태는 대부분 탄산수소염',calc:false},
+  {id:426,subject:1,exam:'2018-08',text:'세균(Bactcria)의 경험적 분자식으로 옳은 것은?',choices:['C5H7O2N','C5H8O2N','C7H8O5N','C8H9O5N'],answer:1,explain:'호기성세균 : C5H7O2N 혐기성세균 : C5H8O3N 조류(algae) : C5H8O2N 균류(fungi) :C10H17O6N',calc:false},
+  {id:427,subject:1,exam:'2018-08',text:'다음 물질 중 이온화도가 가장 큰 것은?',choices:['CH3COOH','H2CO3','HNO3','NH3'],answer:2,explain:'강산인 질산이 이온화도가 제일 큼 Ca(OH)2 + Ca(HCO3)2 -> 2CaCO3 + 2H20 분자량      74g                 2*100g 10g                   x',calc:false},
+  {id:428,subject:2,exam:'2018-08',text:'카드뮴이 인체에 미치는 영향으로 가장 거리가 먼 것은?',choices:['칼슘 대사기능 장해','Hunter-Russel 장해','골연화증','Fanconi씨 증후군'],answer:1,explain:'헌터루셀은 수은입니다~!',calc:false},
+  {id:429,subject:2,exam:'2018-08',text:'표준맨홀의 형상별 용도에서 내경 1500mm 원형에 해당하는 것은?',choices:['1호맨홀','2호맨홀','3호맨홀','4호맨홀'],answer:2,explain:'1호(D900MM) 2호(D1200MM) 3호(D1500MM)',calc:false},
+  {id:430,subject:2,exam:'2018-08',text:'상수도 송수시설의 계획송수량 산정에 기준이 되는 수량은?',choices:['계획 1일 최대급수량','계획 1일 평균급수량','계획 1일 시간 최대급수량','계획 1일 시간 평균급수량'],answer:0,explain:'송수시설의 계획송수량은 원칙적으로 계획 1일 최대급수량을 기준으로 한다.',calc:false},
+  {id:431,subject:2,exam:'2018-08',text:'정수시설의 착수정 구조와 형상에 관한 설계기준으로 틀린 것은?',choices:['착수정은 분할을 원칙으로 하며 고수위 이상으로 유지되도록 월류관이나 월류위어를 설치한다.','형상은 일반적으로 직사각형 또는 원형으로 하고 유입구에는 제수밸브 등을 설치한다.','착수정의 고수위와 주변벽체의 상단 간에는 60cm 이상의 여유를 두어야 한다.','부유물이나 조류 등을 제거할 필요가 있는 장소에는 스크린을 설치한다.'],answer:0,explain:'고수위 이상 올라가면 안돼요!!',calc:false},
+  {id:432,subject:2,exam:'2018-08',text:'상수도시설인 완속여과지에 관한 설명으로 틀린 것은?',choices:['여과지 깊이는 하부집수장치의 높이에 자갈층 두께와 모래층 두께까지 2.5~3.5m를 표준으로 한다.','완속여과지의 여과속도는 4~5m/day를 표준으로 한다.','모래층의 두께는 70~90cm를 표준으로 한다.,','여과지의 모래면 위의 수심은 90~120cm를 표준으로 한다.'],answer:0,explain:'여유고의 높이까지 포함해서 2.5~3.5m를 표준으로 합니다!',calc:false},
+  {id:433,subject:2,exam:'2018-08',text:'펌프를 선정할 때 고려 사항으로 적당치 않는 것은?',choices:['펌프를 최대효율점 부근에서 운전하도록 용량 및 대수를 결정한다.','펌프의 설치대수는 유지관리상 가능한 적게하고 동일용량의 것으로 한다.','펌프는 저용량일수록 효율이 높으므로 가능한 저용량으로 한다.','내부에서 막힘이 없고, 부식 및 마모가 적어야 한다.'],answer:2,explain:'고용량일수록 효율이 높으므로 가능한 용량을 크게한다.',calc:false},
+  {id:434,subject:2,exam:'2018-08',text:'계획우수량 산정 시 고려하는 하수관로의 설계강우로 알맞은 것은?',choices:['30~50년빈도','10~30년빈도','10~15년빈도','5~10년빈도'],answer:1,explain:'하수관로 : 10~30년 빈도 우수 및 합류식 관거 : 30~50년 빈도',calc:false},
+  {id:435,subject:2,exam:'2018-08',text:'계획오수량에 관한 설명으로 틀린 것은?',choices:['지하수량은 1인1일최대오수량의 20%이하로 한다.','계획시간최대오수량은 계획1일 최대오수량의 1시간당 수량의 1.3~1.8배를 표준으로 한다.','합류식에서 우천 시 계획오수량은 원칙적으로 계획시간최대오수량의 3배 이상으로 한다.','계획1일평균오수량은 계획1일최대오수량의 50~60%를 표준으로 한다.'],answer:3,explain:'계획1일평균오수량은 계획1일최대오수량은 70~80%를 표준',calc:false},
+  {id:436,subject:2,exam:'2018-08',text:'비교회전도(Ns)에 대한 설명으로 틀린 것은?',choices:['펌프는 Ns 값에 따라 그 형식이 변한다.','Ns 값이 같으면 펌프의 크기에 관계없이 같은 형식의 펌프로 하고 특성도 대체로 같아진다.','수량과 전양정이 같다면 회전수가 많을수록 Ns 값이 커진다.','일반적으로 Ns값이 적으면 유량이 큰 저양정의 펌프가 된다.'],answer:0,explain:'공식상 Ns와 Q는 비례관계입니다 농약은 활성탄과 오존으로 처리 할 수 있다. 정수처리에서 불소 제거방법 1. 응집침전법    2.활성알루미나법',calc:false},
+  {id:437,subject:2,exam:'2018-08',text:'하수관이 부식하기 쉬운 곳은?',choices:['바닥 부분','양 옆 부분','하수관 전체','관정부(crown)'],answer:3,explain:'하수관에서는 혐기성 상태 시 H2S가 발생하여 관정에서 부식이 발생한다.',calc:false},
+  {id:438,subject:2,exam:'2018-08',text:'전양정에 대한 펌프의 형식 중 틀린 것은?',choices:['전양정 5m 이하는 펌프구경 400mm 이상의 축류펌프를 사용한다.','전양정 3~12m는 펌프구경 400mm 이상의 원심펌프를 사용한다.','전양정 5~20m는 펌프구경 300mm 이상의 원심 사류 펌프를 사용한다.','전양정 4m 이상은 펌프구경 80mm 이상의 원심펌프를 사용한다.'],answer:1,explain:'3~12M 는 펌프구경 400mm 이상의 사류펌프를 사용',calc:false},
+  {id:439,subject:2,exam:'2018-08',text:'우수배제 계획에서 계획우수량을 산정할 때 고려할 사항이 아닌 것은?',choices:['유출계수','유속계수','배수면적','유달시간'],answer:1,explain:'계획우수량 = 유출계수*강우강도*배수면적 (강우강도는 유달시간과 관련됨)',calc:false},
+  {id:440,subject:2,exam:'2018-08',text:'하수도계획의 목표연도는 원칙적으로 몇 년으로 설정하는가?',choices:['15년','20년','2년','30년'],answer:1,explain:'하수도 20년 상수도 15~20년',calc:false},
+  {id:441,subject:2,exam:'2018-08',text:'상수도 급수배관에 관한 설명으로 틀린 것은?',choices:['급수관을 공공도로에 부설할 경우에는 도로관리자가 정한 점용위치와 깊이에 따라 배관해야 하며 다','급수관을 부설하고 되메우기를 할 때에는 양질토 또는 모래를 사용하여 적절하게 다짐하여 관을 보','급수관이 개거를 횡단하는 경우에는 가능한 한 개거의 위로 부설한다.','동결이나 결로의 우려가 있는 급수설비의 노출부분에 대해서는 적절한 방한조치나 결로방지조치를'],answer:1,explain:'위로말고 아래로 부설해야해요 NS= NX(Q^ 1/2)/(H ^ 3/4 ) N= 회 /min Q=m3/min',calc:false},
+  {id:442,subject:3,exam:'2018-08',text:'관로의 접합과 관련된 고려 사항으로 틀린 것은?',choices:['접합의 종류에는 관정접합, 관중심접합, 수면접합, 관저접합 등이 있다.','관로의 관경이 변화하는 경우의 접합방법은 원칙적으로 수면접합 또는 관정접합으로 한다.','2개의 관로가 합류하는 경우 중심교각은 되도록 60°이상으로 한다.','지표의 경사가 급한 경우에는 관경변화에 대한 유무에 관계없이 원칙적으로 단차접합 또는 계단접합'],answer:1,explain:'60도 이하로 집수매거 매설깊이는 5미터 이상',calc:false},
+  {id:443,subject:3,exam:'2018-08',text:'막공법에 관한 설명으로 가장 거리가 먼 것은?',choices:['투석은 선택적 투과막을 통해 용액 중에 다른 이온 혹은 분자의 크기가 다른 용질을 분리시키는 것이','투석에 대한 추진력은 막을 기준으로 한 용질의 농도차이다.','한외여과 및 미여과의 분리는 주로 여과작용에 의한 것으로 역삼투현상에 의한 것이 아니다.','역삼투는 반투막으로 용매를 통과시키기 위해 동수압을 이용한다.'],answer:3,explain:'역삼투는 정수압차 이용합니다 V=(Ci-C)*Q/k*C 대입해서 계산하면 225000m3 시험 당시 4번 보기 오류',calc:false},
+  {id:444,subject:3,exam:'2018-08',text:'호기성 미생물에 의하여 발생되는 반응은?',choices:['포도당→알코올','초산→메탄','아질산염→질산염','포도당→초산'],answer:2,explain:'아질산 -> 질산 반응은 호기성 미생물인 Nitrobacter에 의해 진행',calc:false},
+  {id:445,subject:3,exam:'2018-08',text:'난분해성 폐수처리에 이용되는 펜톤 시약은?',choices:['H2O2+철염','알루미늄염+철염','H2O2+알루미늄염','철염+고분자응집제'],answer:1,explain:'펜톤산화 : 과산화수소(H2O2)를 철염과 함꼐 주입했을 때 산화반응성이 좋은 OH라디칼이 생성하여 오 염물질을 처리하는 방법 SVI=SVI30/MLSS =150 /3 =50',calc:false},
+  {id:446,subject:3,exam:'2018-08',text:'혐기성 소화조내의 pH가 낮아지는 원인이 아닌 것은?',choices:['유기물 과부하','과도한 교반','중금속 등 유해물질 유입','온도 저하'],answer:1,explain:'교반이 부족한 경우에 pH가 저하 아래와 같은 오류 신고가 있었습니다. 여러분들의 많은 의견 부탁 드립니다. 추후 여러분들의 의견을 반영하여 정답을 수정하도록 하겠습니다.',calc:false},
+  {id:447,subject:3,exam:'2018-08',text:'화학적 인 제거 방법으로 정석탈인법에 사용되는 것은?',choices:['Al','Fe','Ca','Mg'],answer:2,explain:'정석탈인법 : Ca 사용, 금속염탈인법 : Al 사용 1.79×(20/25)^(4/3) × (1^2)/(2×9.8) × sin50 = 0.0519',calc:false},
+  {id:448,subject:3,exam:'2018-08',text:'정수장에 적용되는 완속여과의 장점이라 볼 수 없는 것은?',choices:['여과시스템의 신뢰성이 높고 양질의 음용수를 얻을 수 있다.','수량과 탁질의 급격한 부하변동에 대응할 수 있다.','고도의 지식이나 기술을 가진 운전자를 필요로 하지 않고 최소한의 전력만 필요로 한다.','여과지를 간헐적으로 사용하여도 양질의 여과수를 얻을 수 있다.'],answer:0,explain:'여과지 연속적으로 사용해여 영작의 여과서 얻어요 ss농도는 일정',calc:false},
+  {id:449,subject:3,exam:'2018-08',text:'흡착장치 중 고정상 흡착장치의 역세척에 관한 설명으로 가장 알맞은 것은?',choices:['㉠ 24시간, ㉡ 14~48, ㉢ 25~30%','㉠ 24시간, ㉡ 24~48, ㉢ 10~50%','㉠ 짧은시간, ㉡ 14~28, ㉢ 25~30%','㉠ 짧은시간, ㉡ 24~48, ㉢ 10~50%'],answer:3,explain:'4번이 정답입니다.',calc:false},
+  {id:450,subject:3,exam:'2018-08',text:'소독제로서 오존(O3)의 효율성에 대한 설명으로 가장 거리가 먼 것은?',choices:['오존은 대단히 반응성이 큰 산화제이다.','오존은 매우 효과적인 바이러스 사멸제이다.','오존처리는 용존 고형물을 증가시키지 않는다.','pH가 높을 때 소독효과가 좋다.'],answer:3,explain:'오존은 pH변화와 관계없이 소독효과가 좋다.',calc:false},
+  {id:451,subject:3,exam:'2018-08',text:'폐수의 고도처리에 관한 설명으로 가장 거리가 먼 것은?',choices:['염수 등 무기염류의 제거에는 전기투석, 역삼투 등을 사용한다.','질소제거는 소석회 등을 사용하여 pH 10.8~11.5에서 암모니아 스트리핑을 한다.','인산이온은 수산화나트륨 등으로 중화하여 침전처리한다.','잔류 COD는 급속사여과 후 활성탄 흡착 처리한다.'],answer:2,explain:'탈기법으로 질소 제거 시 최적ph 10~12 정석탈인법은 칼슘이온 첨가',calc:false},
+  {id:452,subject:3,exam:'2018-08',text:'폐수로부터 질소물질을 제거하는 주요 물리화학적 방법이 아닌 것은?',choices:['Phostrip법','암모니아스트리핑법','파과점염소처리법','이온교환법'],answer:2,explain:'Phostrip 법은 오직 인 만을 제거하기위한 생물화학적 고도처리방법이다ㅣ 부하량=고형물양/면적 면적D^2/4×pi=40 따라서 직경 7.14 E23 = E20 * 1.035^(23-20) = E20 * 1.1087',calc:false},
+  {id:453,subject:3,exam:'2018-08',text:'아래의 공정은 A2/O공정을 나타낸 것이다. 각 반응조의 주요 기능에 대하여 옳은 것은?',choices:['혐기조 : 인방출, 무산소조 : 질산화, 폭기조 : 탈질, 인과잉섭취','혐기조 : 인방출, 무산소조 : 탈질, 폭기조 : 인과잉섭취, 질산화','혐기조 : 탈질, 무산소조 : 질산화. 폭기조 : 인방출 및 과잉섭취','혐기조 : 탈질, 무산소조 : 인과잉섭취, 폭기조 : 질산화, 인방출'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:454,subject:3,exam:'2018-08',text:'수질성분이 금속 하수도관의 부식에 미치는 영향으로 가장 거리가 먼 것은?',choices:['잔류염소는 용존산소와 반응하여 금속부식을 억제시킨다.','용존산소는 여러 부식 반응속도를 증가시킨다.','고농도의 염화물이나 황산염은 철, 구리, 납의 부식을 증가시킨다.','암모니아는 착화물의 형성을 통하여 구리, 납 등의 용해도를 증가시킬 수 있다.'],answer:0,explain:'잔류염소는 용존산소와 반응하여 금속 부식을 더욱 활성화시킨다.',calc:false},
+  {id:455,subject:4,exam:'2018-08',text:'기체크로마토그래피법의 전자포획검출기에 관한 설명으로 ()에 알맞은 것은?',choices:['α(알파)선','β(베타)선','γ(감마)선','중성자선'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:456,subject:4,exam:'2018-08',text:'불꽃원자흡수분광광도법 분석절차 중 가장 먼저 수행되는 것은?',choices:['최적의 에너지 값을 얻도록 선택파장을 최적화 한다.','버너헤드를 설치하고 위치를 조정한다.','바탕시료를 주입하여 영점조정을 한다.','공기와 아세틸렌을 공급하면서 불꽃을 발생시키고 최대감도를 얻도록 유량을 조절한다.'],answer:0,explain:'1-2-4-3 순으로 분석한다.',calc:false},
+  {id:457,subject:4,exam:'2018-08',text:'총대장균군 측정 시에 사용하는 배양기의 배양온도기준으로 옳은 것은?',choices:['20±1℃','25±0.5℃','30±1℃','35±0.5℃'],answer:3,explain:'4번이 정답입니다.',calc:false},
+  {id:458,subject:4,exam:'2018-08',text:'수질오염공정시험기준 총칙에서 용어의 정의가 틀린 것은?',choices:['무게를 “정확히 단다”라 함은 규정된 수치의 무게를 0.1mg까지 다는 것을 말한다.','시험조작 중 “즉시”란 30초 이내에 표시된 조작을 하는 것을 뜻한다.','“바탕시험을 하여 보정한다”라 함음 시료를 사용하여 같은 방법으로 조작한 측정치를 보정하는 것을','“정확히 취하여”라 하는 것은 규정한 양의 액체를 부피피펫으로 눈금까지 취하는 것을 말한다.'],answer:3,explain:'"바탕시험을 하여 보정한다." 라 함은, 시료에 대한 처리 및 측정을 할때, \'시료를 사용하지 않고같은 방법으로 조작한 측정치를 빼는\' 것을 뜻한다.',calc:false},
+  {id:459,subject:4,exam:'2018-08',text:'원자흡수분광광도법에 의한 크롬측정에 관한 설명으로 ()에 맞는 것은?',choices:['357.9, 0.01, 0.001','357.9, 0.001, 0.01','715.8, 0.01, 0.001','715.8, 0.001, 0.01'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:460,subject:4,exam:'2018-08',text:'기기분석법에 관한 설명으로 틀린 것은?',choices:['유도결합플라스마(ICP)는 시료도입부, 고주파전원부, 광원부, 분광부, 연산처리부 및 기록부로 구성','원자흡수분광광도법은 시료중의 유해중금속 및 기타 원소의 분석에 적용한다.','흡광광도법은 차장 200~900nm에서의 액체의 흡광도를 측정한다.','기체크로마토그래피법의 검출기 중 열전도도검출기는 인 또는 유황화합물의 선택적 검출에 주로 사'],answer:3,explain:'인 또는 유황화합물의 검출기에는 불꽃광도형 검출기를 사용한다.',calc:false},
+  {id:461,subject:4,exam:'2018-08',text:'하천수의 시료 채취 지점에 관한 내용으로 ()에 공통으로 들어갈 내용은?',choices:['2m','3m','5m','6m'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:462,subject:4,exam:'2018-08',text:'자외선/가시선분광법을 이용하여 아연을 측정하는 원리로 ()에 옳은 내용은?',choices:['pH 약 2','pH 약 4','pH 약 9','pH 약 11'],answer:0,explain:'아연 pH 9, 페놀 pH 10, 시안 pH 2 보기 2, 3 번은 서로 정의가 바뀌었으며, 4번 보기에서는 방법검출한계의 5~50배가 되어야한다.',calc:false},
+  {id:463,subject:4,exam:'2018-08',text:'막여과법에 의한 총대장균군 측정방법에 대한 설명으로 틀린 것은?',choices:['페트리접시에 배지를 올려놓은 다음 배양 후 금속성 광택을 띠는 적색이나 진한적색계통의 집락을','총대장균군은 그람음성, 무아포성의 간균으로서 락토스를 분해하여 가스 또는 산을 발생하는 모든','양성대조군은 E, Coli 표준균주를 사용하고 음성대조군은 멸균 희석수를 사용하도록 한다','고체배지는 에탄올(90%) 20mL를 포함한 정제수 1L에 배지를 정해진 고체배지 조성대로 넣고 완'],answer:3,explain:'에탄올의 농도 ( 95% )',calc:false},
+  {id:464,subject:4,exam:'2018-08',text:'유기물 함량이 낮은 깨끗한 하천수나 호소수등의 시료 전처리 방법으로 이용되는 것은?',choices:['질산에 의한 분해','염산에 의한 분해','황산에 의한 분해','아세트산에 의한 분해'],answer:1,explain:'*산분해법* 질산법 - 유기물 함량이 비교적 높지않은 시료의 전처리 질산-염산법 - 유기물 함량이 비교적 높지않고 금속의 수산화물, 산화물, 인산염, 황화물을 함유하고 있 는 시료에 적용',calc:false},
+  {id:465,subject:4,exam:'2018-08',text:'자외선/가시선 분광법을 적용한 페놀류 측정에 관한 내용으로 옳은 것은?',choices:['정량한계는 클로로폼측정법일 때 0.025mg/L이다.','정량범위는 직접측정법일 때 0.025~0.05mg/L이다.','증류한 시료에 염화암모늄-암모니아 완충액을 넣어 pH 10으로 조절한다.','4-아미노안티피린과 페리시안 칼륨을 넣어 생성된 청색의 안티피린계 색소의 흡광도를 측정하는 방'],answer:3,explain:'클로로폼 추출법일 때 정량반계 0.005mg/L 직접측정법일 때 정량한계 0.05mg/L 4-아모노안티티린으로 생성된 붉은색의 안티피린계 색소 측정 윙클러-아자이드화나트륨 변법 : 1법',calc:false},
+  {id:466,subject:4,exam:'2018-08',text:'유도결합플라스마 원자발광분광법에 의해 측정할 수 있는 항목이 아닌 것은?',choices:['6가크롬','비소','불소','망간'],answer:2,explain:'유도결합플라스마 원자발광분광법 : 중금속 측정 불소는 중금속 x',calc:false},
+  {id:467,subject:1,exam:'2018-04',text:'수질오염경보 중 수질오염감시경보 대상 항목이 아닌 것은?',choices:['용존산소','전기전도도','부유물질','총유기탄소'],answer:0,explain:'수질오염경보의 종류별 경보단계 및 그 단계별 발령ㆍ해제 기준 <수질오염감시경보> -관심 1. 수소이온농도, 용존산소, 총실소, 총인, 전기전도도, 총유기탄소, 휘발성 유기화합물, 페놀,',calc:false},
+  {id:468,subject:1,exam:'2018-04',text:'유기화합물에 대한 설명으로 옳지 않은 것은?',choices:['유기 화합물들은 일반적으로 녹는 점과 끓는 점이 낮다.','유기화합물들은 하나의 분자식에 대하여 여러 종류의 화합물이 존재할 수 있다.','유기화합물들은 대체로 이온 반응보다는 분자반응을 하므로 반응속도가 빠르다.','대부분의 유기화합물은 박테리아의 먹이가 될 수 있다.'],answer:2,explain:'분자반응이 이온반응보다 느리다 자정계수=k2/k1=2 혼합지점 DO=((1.0x0)+(6.0x9.2))/(1.0+6.0)=7.89mg/L Do=Cs-DO=9.2-7.89=1.31mg/L',calc:false},
+  {id:469,subject:1,exam:'2018-04',text:'산화-환원에 대한 설명으로 알맞지 않은 것은?',choices:['산화는 전자를 받아들이는 현상을 말하며, 환원은 전자를 잃는 현상을 말한다.','이온 원자가나 공유원자가에 (+)나 (-)부호를 붙인 것을 산화수라 한다.','산화는 산화수의 증가를 말하며, 환원은 산화수의 감소를 말한다.','산화는 수소화합물에서 수소를 잃는 현상이며 환원은 수소와 화합하는 현상을 말한다.'],answer:0,explain:'산화: 산소와 결합, 수소를 잃음, 전자를 잃음, 산화수의 증가 환원: 산소를 잃음, 수소와 결합, 전자를 얻음, 산화수의 감소 따라서, 1번은 환원은 전자를 받아들이는 현상을 말하며, 산화는 전자를 잃는 현상을 말한다.',calc:false},
+  {id:470,subject:1,exam:'2018-04',text:'해수의 특성으로 틀린 것은?',choices:['해수는 HCO3-를 포화시킨 상태로 되어 있다.','해수의 밀도는 염분비 일정법칙에 따라 항상 균일하게 유지된다.','해수 내 전체 질소 중 약 35% 정도는 암모니아성 질소와 유기 질소의 형태이다.','해수의 Mg/Ca 비는 3-4 정도로 담수에 비하여 크다.'],answer:0,explain:'해수의 밀도는 1.02~1.07g/cm^3 범위로 수온, 염분, 수압의 함수이며, 수심이 깊을수록 증가한다. u=umax(S/(Ks+S)) =0.35(100/(30+100)) =0.269',calc:false},
+  {id:471,subject:1,exam:'2018-04',text:'유리산소가 존재하는 상태에서 발육하기 어려운 미생물로 가장 알맞은 것은?',choices:['호기성 미생물','통성혐기성 미생물','편성혐기성 미생물','미호기성 미생물'],answer:1,explain:'통성 혐기성은 호기성 상태와 혐기성 상태 둘다에서 발육이 가능 편성 혐기성은 혐기성에서만 발육 가능하다 0.02kg/m^3 × Q × 3600sec/1hr + 4kg/hr = 0.55kg/m^3 × Q × 3600sec/hr',calc:false},
+  {id:472,subject:1,exam:'2018-04',text:'우리나라 호수들의 형태에 따른 분류와 그 특성을 나타낸 것으로 가장 거리가 먼 것은?',choices:['하천형 : 긴 체류시간','가지형 : 복잡한 연안구조','가지형 : 호수 내 만의 발달','하구형 : 높은 오염부하량'],answer:1,explain:'우리나라 하천의 특징 하천의 길이가 짧아 오출시간이 짧다. 하천의 유량은 불안정하다 . 하상계수(최대유량/최소유량)가 매우 크다',calc:false},
+  {id:473,subject:1,exam:'2018-04',text:'생물학적 질화 중 아질산화에 관한 설명으로 옳지 않은 것은?',choices:['반응속도가 매우 빠르다.','관련 미생물은 독립영양성 세균이다.','에너지원은 화학에너지이다.','산소가 필요하다.'],answer:2,explain:'생물학적 반응이기 때문에 반응속도가 느림 p:확률적 요소',calc:false},
+  {id:474,subject:1,exam:'2018-04',text:'미생물에 의한 산화·환원 반응에 있어 전자 수용체에 속하지 않는 것은?',choices:['O2','CO2','NH3','유기물'],answer:2,explain:'암모니아는 전자공여체 입니다.',calc:false},
+  {id:475,subject:1,exam:'2018-04',text:'바다에서 발생되는 적조현상에 관한 설명과 가장 거리가 먼 것은?',choices:['적조 조류의 독소에 의한 어패류의 피해가 발생한다.','해수 중 용존산소의 결핍에 의한 어패류의 피해가 발생한다.','갈수기 해수 내 염소량이 높아질 때 발생된다.','플랑크톤의 번식에 충분한 광량과 영양염류가 공급될 때 발생된다.'],answer:2,explain:'풍수기 염분농도가 낮을때.',calc:false},
+  {id:476,subject:2,exam:'2018-04',text:'물의 특성을 설명한 것으로 적절치 못한 것은?',choices:['상온에서 알칼리금속, 알칼리토금속, 철과 반응하여 수소를 발생시킨다.','표면장력은 불순물농도가 낮을수록 감소한다.','표면장력은 수온이 증가하면 감소한다.','점도는 수온과 불순물의 농도에 따라 달라지는데 수온이 증가할수록 점도는 낮아진다.'],answer:3,explain:'표면장력은 불순물농도가 낮을수록 증가 BODt=BODU×(1-10^(-K×t)) BODU=200/(1-10^(-0.15×5)) =243',calc:false},
+  {id:477,subject:2,exam:'2018-04',text:'배수지의 고수위와 저수위와의 수위차, 즉 배수지의 유효수심의 표준으로 적절한 것은?',choices:['1~2m','2~4m','3~6m','5~8m'],answer:2,explain:'3번이 정답입니다.',calc:false},
+  {id:478,subject:2,exam:'2018-04',text:'오수관로의 유속 범위로 알맞는 것은? (단，계획시간최대오수량 기준)',choices:['최소 0.2m/sec, 최대 2.0m/sec','최소 0.3m/sec, 최대 2.0m/sec','최소 0.6m/sec, 최대 3.0m/sec','최소 0.8m/sec, 최대 3.0m/sec'],answer:3,explain:'단위 : m/sec 상수관거 최소 : 0.3 최대 : 3 하수관거 최소 : 0.6 최대 : 3 우수관거 최소 : 0.8 최대 : 3',calc:false},
+  {id:479,subject:2,exam:'2018-04',text:'응집 사설 중 완속교반시설에 관한 설명으로 틀린 것은?',choices:['완속교반기는 패들형과 터빈형이 사용된다.','완속교반 시 속도경사는 40~100초-1정도로 낮게 유지한다.','조의 형태는 폭:길이:깊이 = 1:1:1~1.2가 적당하다.','체류시간은 5~10분이 적당하고 3~4개의 실로 분리하는 것이 좋다.'],answer:3,explain:'체류시간은 20~30분이 적당하며, 조는 3~4개의 실로 분리하는 것이 좋다. <오류> 3. 폭:길이:깊이 = 1:1:1~1.2 (:빠짐)',calc:false},
+  {id:480,subject:2,exam:'2018-04',text:'비교회전도가 700~1200인 경우에 사용되는 하수도용 펌프 형식으로 옳은 것은?',choices:['터빈펌프','볼류트펌프','축류펌프','사류펌프'],answer:3,explain:'비교회전도 축류펌프 : 1100~1200 사류펌프 : 700~1200 원심펌프 : 100~750',calc:false},
+  {id:481,subject:2,exam:'2018-04',text:'하수관로의 유속과 경사는 하류로 갈수록 어떻게 되도록 설계하여야 하는가?',choices:['유속 : 증가, 경사 : 감소','유속 : 증가, 경사 : 증가','유속 : 감소, 경사 : 증가','유속 : 감소, 경사 : 감소'],answer:1,explain:'V=(1/n) X R^(2/3) X I^(1/2) V= 1/0.013 X (0.25/4)^(2/3)X (2/1000)(1/2) = 0.542m/sec',calc:false},
+  {id:482,subject:2,exam:'2018-04',text:'취수탑의 위치에 관한 내용으로 ( )에 옳은 것은?',choices:['1m','2m','3m','4m'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:483,subject:2,exam:'2018-04',text:'상향류식 경사판 침전지의 표준 설계요소에 관한 설명으로 잘못된 것은?',choices:['표면부하율은 4~9mm/min로 한다.','침강장치는 1단으로 한다.','경사각은 55~60°로 한다.','침전지 내의 평균상승유속은 250 mm/min 이하로 한다.'],answer:0,explain:'상향류식 경사판의 표면부하율은 12-28mm/min이다',calc:false},
+  {id:484,subject:2,exam:'2018-04',text:'지하수(복류수포함)의 취수 시설 중 집수매거에 관한 설명으로 옳지 않는 것은?',choices:['복류수의 유황이 좋으면 안정된 취수가 가능하다.','하천의 대소에 영향을 받으며 주로 소하천에 이용된다.','침투된 물을 취수하므로 토사유입은 거의 없고 대개는 수질이 좋다.','하천바닥의 변동이나 강바닥의 저하가 큰 지점은 노출될 우려가 크므로 적당하지 않다.'],answer:1,explain:'하천의 대소에 관계없이 이용됨',calc:false},
+  {id:485,subject:2,exam:'2018-04',text:'저수댐의 위치에 관한 설명으로 틀린 것은?',choices:['댐 지점 및 저수지의 지질이 양호하여야 한다.','가장 작은 댐의 크기로서 필요한 양의 물을 저수할 수 있어야 한다.','유역면적 이 작고 수원보호상 유리한 지형이어야 한다.','저수지용지 내에 보상해야 할 대상물이 적어야 한다.'],answer:2,explain:'유역면적이 넓어야한다.',calc:false},
+  {id:486,subject:2,exam:'2018-04',text:'계획우수량을 정할 때 고려하여야 할 사항 중 틀린 것은?',choices:['하수관거의 확률년수는 원칙적으로 10~30년으로 한다.','유입시간은 최소단위배수구의 지표면특성을 고려하여 구한다.','유출계수는 지형도를 기초로 답사를 통하여 충분히 조사하고 장래 개발계획을 고려하여 구한다.','유하시간은 최상류관거의 끝으로부터 하류관거의 어떤 지점까지의 거리를 계획유량에 대응한 유속'],answer:2,explain:'3. 유출계수는 토지이용도별 기초유출계수로부터 총괄유출계수를 구함 t:유달시간=유입시간+유하시간 (min) Q=CIA/360',calc:false},
+  {id:487,subject:2,exam:'2018-04',text:'하수와 배제방식 에 대한 설명으로 잘못된 것은?',choices:['하수의 배제방식에는 분류식과 합류식이 있다.','하수의 배제방식의 결정은 지역의 특성이나 방류수역의 여건을 고려해야 한다.','제반 여건상 분류식이 어려운 경우 합류식으로 설치할 수 있다.','분류식 중 오수관로는 소구경관로로 폐쇄 염려가 있고, 청소가 어렵고, 시간이 많이 소요된다.'],answer:2,explain:'오수관로는 소구관경관로로 폐쇄염려가 있으나, 작아서 청소를 쉽고 빠르게 진행할 수 있음 Ns=N*(Q^1/2)/(H^3/4)',calc:false},
+  {id:488,subject:2,exam:'2018-04',text:'계획오수량에 관한 내용으로 틀린 것은?',choices:['지하수 유입량은 토질, 지하수위, 공법에 따라 다르지만 1인1일 평균 오수량의 10~20%정도로 본','계획 1일 최대오수량은 1인1일 최대오수량에 계획인구를 곱한후 여기에 공장폐수량, 지하수량 및 기','계획 1일 평균오수량은 계획1일 최대오수량의 70~80%를 표준으로 한다.','계획시간최대오수량은 계획1일 최대오수량의 1시간당의 수량의 1.3~1.8배를 표준으로한다.'],answer:0,explain:'1인 1일 평균(x) -> 1인 1일 최대',calc:false},
+  {id:489,subject:2,exam:'2018-04',text:'상수도시설의 등급별 내진설계 목표에 대한 내용으로 ( )에 옳은 내용은?',choices:['㉠ 100년, ㉡ 50년','㉠ 200년, ㉡ 100년','㉠ 500년, ㉡ 200년','㉠ 1000년, ㉡ 500년'],answer:3,explain:'4번이 정답입니다.',calc:false},
+  {id:490,subject:2,exam:'2018-04',text:'하수처리시설의 계획유입수질 산정방식으로 옳은 것은?',choices:['계획오염부하량을 계획1일평균오수량으로 나누어 산정한다.','계획오염부하량을 계획시간평균오수량으로 나누어 산정한다.','계획오염부하량을 계획1일최대오수량으로 나누어 산정한다.','계획오염부하량을 계획시간최대오수량으로 나누어 산정한다.'],answer:0,explain:'1번이 정답입니다.',calc:false},
+  {id:491,subject:2,exam:'2018-04',text:'정수시설인 급속여과지의 표준 여과속도(m/day) 는?',choices:['120~150','150~180','180~250','250~300'],answer:0,explain:'급속여과지의 표준여과속도 : 120~150 완속여과지의 표준여과속도 : 4~5',calc:false},
+  {id:492,subject:3,exam:'2018-04',text:'지하수의 취수지점 선정에 관련한 설명 중 틀린 것은?',choices:['연해부의 경우에는 해수의 영향을 받지 않아야 한다.','얕은 우물인 경우에는 오염원으로부터 5m 이상 떨어져서 장래에도 오염의 영향을 받지 않는 지점이','기존 우물 또는 집수매거의 취수에 영향을 주지 않아야 한다.','복류수인 경우에 장래에 일어날 수 있는 유로변화 또는 하상저하 등을 고려하고 하천개수계획에 지'],answer:1,explain:'앝은 우물이나 복류수인 경우에는 오염원으로부터 15m 이상 떨어져서 장래에도 오염의 영향을 받지 않 는 지점이어야 한다',calc:false},
+  {id:493,subject:3,exam:'2018-04',text:'하수처리방식 중 회전원판법에 관한 설명으로 가장 거리가 먼 것은?',choices:['활성슬러지법에 비해 2차 침전지에서 미세한 SS가 유출되기 쉽고, 처리수의 투명도가 나쁘다.','운전관리상 조작이 간단한 편이다.','질산화가 거의 발생하자 않으며, pH 저하도 거의 없다.','소비 전력량이 소규모 처리시설에서는 표준 활성 슬러지법에 비하여 적은 편이다.'],answer:2,explain:'다단계 공정에서는 높은 질산화율을 얻을 수 있다 혼합액 VSS = 1480mg/L, FSS = 2000mg/L - 1480mg/L = 520mg/L 폐수 VSS = 1480mg/L, FSS = 1480mg/L X 0.3 = 444mg/L 유입수 VSS = 0mg/L, FSS = 520mg/L - 444mg/L = 76mg/L',calc:false},
+  {id:494,subject:3,exam:'2018-04',text:'폐수의 고도처리에 관한 다음의 기술 중 옳지 않은 것은?',choices:['Cl-, SO42- 등의 무기염류의 제거에는 전기투석법이 이용된다.','활성탄 흡착법에서 폐수 중의 인산은 제거되지 않는다.','모래여과법은 고도처리 중에서 흡착법이나 전기투석법의 전처리로써 이용된다.','폐수 중의 무기성질소 화합물은 철염에 의한 응집침전으로 완전히 제거된다.'],answer:2,explain:'폐수속의 질소화합물은 가스로 날려서 제거하고 침전제거하지 않는다 (3.05-1.00)mg/L×80.1/71×4350m3/day 아황산염:염소 1:1 몰비로 반응 아황산염 분자량80.1 염소 분자량71',calc:false},
+  {id:495,subject:3,exam:'2018-04',text:'슬러지의 열처리에 대해 기술한 것으로 옳지 않은 것은?',choices:['슬러지의 열처리는 탈수의 전처리로서 한다.','슬러지의 열처리에 의해, 슬러지의 탈수성과 침강성이 좋아진다.','슬러지의 열처리에 의해, 슬러지 중의 유기물이 가수분해되어 가용화된다.','슬러지의 열처리에 의한 분리액은 BOD가 낮으므로 그대로 방류할 수 있다.'],answer:3,explain:'열처리 시 BOD가 높아지는 단점이 있다 표면 부하율 =Q/A=H/t=4m/1.92hr×24hr/day=50m/day',calc:false},
+  {id:496,subject:3,exam:'2018-04',text:'수질 성분이 부식에 미치는 영향으로 틀린 것은?',choices:['높은 알칼리도는 구리와 납의 부식을 증가시킨다.','암모니아는 착화물 형성을 통해 구리, 납 등의 금속용해도를 증가시킬 수 있다.','잔류염소는 Ca와 반응하여 금속의 부식을 감소시킨다.','구리는 갈바닉 전지를 이룬 배관상에 흠집(구멍)을 야기한다.'],answer:1,explain:'잔류염소는 용존산소와 반응해서 금속부식을 활성화 시킨다. In(10/100)=-K*5min K=0.7675/min In(5/100)=-0.7675*t',calc:false},
+  {id:497,subject:3,exam:'2018-04',text:'하수로부터 인 제거를 위한 화학제의 선택에 영향을 미치는 인자가 아닌 것은?',choices:['유입수의 인 농도','슬러지 처리시설','알칼리도','다른 처리공정과의 차별성'],answer:3,explain:'화학제의 선택에 영향을 미치는 인자 : 유입수의 인농도, 슬러지 처리시설, 알칼리도, 다른 처리공정과 호환성',calc:false},
+  {id:498,subject:3,exam:'2018-04',text:'무기수은계 화합물을 함유한 폐수의 처리방법이 아닌 것은?',choices:['황화물 침전법','활성탄 흡착법','산화분해법','이온교환법'],answer:2,explain:'수은을 산화시킨다고 수은이 없어지지 않아요 총용존고형물이 증가합니다.',calc:false},
+  {id:499,subject:4,exam:'2018-04',text:'질소 제거를 위한 파괴점 염소 주입법에 관한 설명과 가장 거리가 먼 것은?',choices:['적절한 운전으로 모든 암모니아성 질소의 산화가 가능하다.','시설비가 낮고 기존 시설에 적용이 용이하다.','수생생물에 독성을 끼치는 잔류염소농도가 높아진다.','독성물질과 온도에 민감하다.'],answer:3,explain:'4번은 생물학적 처리법 Ci×Q-CQ-Vk(C^0.5)=0 V=500L/h×(250-0.05×250)mg/L÷(0.05×(250×0.05)^(0.5))=671m3',calc:false},
+  {id:500,subject:4,exam:'2018-04',text:'수질분석용 시료의 보존 방법에 관한 설명 중 틀린 것은?',choices:['6가 크롬분석용 시료는 c-HNO3 1mL/L를 넣어 보관한다.','페놀분석용 시료는 인산을 넣어 pH 4 이하로 조정한 후, 황산구리 (1g/L)를 첨가하여 4°C에서 보관','시안 분석용 시료는 수산화나트륨으로 pH 12 이상으로 하여 4°C 에서 보관한다.','화학적산소요구량 분석용 시료는 황산으로 pH 2 이하로 하여 4°C에서 보관한다.'],answer:1,explain:'6가크롬은 4℃에서 보관 글루코오즈 및 글루탐산 용액으로 측정하여 얻은 BOD 값은 200±30 mg/L 의 범위 안에 있어야 하는 것 이 맞습니다. 따라서 범위는 170 ~ 230 범위를 벗어난 틀린 답을 고르시면 됩니다.',calc:false},
+  {id:501,subject:4,exam:'2018-04',text:'불소 측정시험 시 수증기 증류법으로 전처리하지 않아도 되는 것은?',choices:['색도가 30도인 시료','P043-의 농도가 4mg/L인 시료','Al3+의 농도가 2mg/L인 시료','Fe2+의 농도가 7mg/L인 시료'],answer:3,explain:'해당 문제의 내용은 공정시험 기준에도 포함되어 있지 않는 것으로 18년도 당시엔 이의신청이 받아들여 지지 않은 것으로 알고 있습니다. 공정시험 기준 중 불소 항목에 "알류미늄 및 철의 방해가 크나 증류하면 영향이 없다." 라는 항목만 있을 뿐 전처리로 배제하는 물질의 명칭과 그 농도에 대한 명시는 되어있지 않습니다.',calc:false},
+  {id:502,subject:4,exam:'2018-04',text:'전기전도도의 정밀도 기준으로 ( )에 옳은 것은?',choices:['15%','20%','25%','30%'],answer:1,explain:'전기 전도도의 정밀도의 기준은, 표준편차 20% 이내이다. pH 순서(왼쪽에서 오른쪽으로 높아짐) 옥살산염<프탈산염<인산염<붕산염<탄산염<수산화칼슘',calc:false},
+  {id:503,subject:4,exam:'2018-04',text:'20°C 이하에서 BOD 측정 시료의 용존산소가 과포화되어 있을 때 처리하는 방법은?',choices:['시료의 산소 과포화되어 있어도 배양전 용존 산소 값으로 측정됨으로 상관이 없다.','시료의 수온을 23~25°C로 하여 15분간 통기하고 방냉한 후 수온을 20°C로 한다.','아황산나트륨을 적당량 넣어 산소를 소모시킨다.','5°C 이하로 냉각시켜 냉암소에서 15분간 잘 저어준다.'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:504,subject:4,exam:'2018-04',text:'자외선/가시선 분광법을 적용하여 페놀류를 측정할 때 사용되는 시약은?',choices:['4-아미노안티피린','인도 페놀','O-페난트로린','디티죤'],answer:3,explain:'자외선/가시선분광법 4-아미노안티피린 : 페놀류측정에사용 인도페놀 : 암모니아성질소 분석에서의 측정물질 o-페난트로닌 : 철 측정에 사용',calc:false},
+  {id:505,subject:4,exam:'2018-04',text:'수질오염공정시험기준상 기체크로마토그래피법으로 정량하는 물질은?',choices:['불소','유기인','수은','비소'],answer:1,explain:'기체크로마토그래피로 정량하는 물질 알킬수은, 유기인, PCB, 석유계 총탄화수소, 휘발성 유기화합물, 1, 4-다이옥산, 다이에틸헥실프탈레이 트, 포름알데하이드, 염화비닐 아크릴로니트릴, 브로모폼, 나프탈렌 등',calc:false},
+  {id:506,subject:4,exam:'2018-04',text:'\'항량으로 될 때까지 강열한다.\'는 의미에 해당하는 것은?',choices:['강열할 때 전후무게의 차가 g당 0.1mg 이하일 때','강열할 때 전후무게의 차가 g당 0.3mg 이하일 때','강열할 때 전후무게의 차가 g당 0.5mg 이하일 때','강열할 때 전후무게의 차가 없을 때'],answer:1,explain:'2번이 정답입니다.',calc:false},
+  {id:507,subject:4,exam:'2018-04',text:'온도에 관한 내용으로 옳지 않는 것은?',choices:['찬 곳은 따로 규정이 없는 한 0~15°C의 곳을 뜻한다.','냉수는 15°C이하를 말한다.','온수는 70~90°C를 말한다.','상온은 15~25°C를 말한다.'],answer:2,explain:'3. 온수는 60~70°C',calc:false},
+  {id:508,subject:4,exam:'2018-04',text:'흡광 광도 측정에서 입사광의 60%가 흡수되었을 때의 흡광도는?',choices:['약 0.6','약 0.5','약 0.4','약 0.3'],answer:2,explain:'A = log(1/1-0.01*입사광) = log(1/0.4) = 0.3979',calc:false},
+  {id:509,subject:4,exam:'2018-04',text:'자외선/가시선 분광법을 이용한 철의 정량에 관한 내용으로 틀린 것은?',choices:['등적색 철착염의 흡광도를 측정하여 정량한다.','측정파장은 510nm이다.','염산 히드록실아민에 의해 산화제이철로 산화된다.','철이온을 암모니아 알칼리성으로 하여 수산화제이철로 침전분리 한다.'],answer:1,explain:'염화히드록실아민에 의해 제일철로 환원 부유고형물=건조, 휘발성=소각 부유고형물=(1.5553-1.5433)g/50ml=240mg/L',calc:false},
+  {id:510,subject:4,exam:'2018-04',text:'다음 중 용량분석법으로 측정하지 않는 항목은?',choices:['용존산소','부유물질','화학적산소요구량','염소이온'],answer:1,explain:'부유물질은 중량법으로 한다.',calc:false},
+  {id:511,subject:4,exam:'2018-04',text:'시료 채취 시 유의사항으로 틀린 것은?',choices:['채취 용기는 시료를 채우기 전에 시료로 3회 이상 씻은 다음 사용한다.','시료 채취 용기에 시료를 채울 때에는 어떠한 경우에도 시료의 교란이 일어나서는 안 된다.','지하수 시료는 취수정 내에 고여 있는 물과 원래 지하수의 성상이 달라질 수 있으므로 고여 있는 물','시료채취량은 시험항목 및 시험횟수의 필요량의 3~5배 채취를 원칙으로 한다.'],answer:3,explain:'시료채취량은 시험항목 및 시험횟수의 필요량의 3~5L 채취를 원칙으로 한다.',calc:false},
+  {id:512,subject:1,exam:'2018-03',text:'비점오염저감시설의 설치와 관련된 사항으로 틀린 것은?',choices:['도시의 개발, 산업단지의 조성 등 사업을 하는 자는 환경부령이 정하는 기간 내에 비점오염저감시설','강우유출수의 오염도가 항상 배출허용기준 이내로 배출되는 사업장은 비점오염저감시설을 설치하지','한강대권역의 완충저류시설에 유입하여 강우유출수를 처리할 경우 비점오염저감 시설을 설치하지','대통령령으로 정하는 규모 이상의 사업장에 제철시설, 섬유염색시설, 그 밖에 대통령령으로 정하는'],answer:2,explain:'[물환경보전법 제53조] 한강대권역의 완충저류시설에 유입하여 강우유출수를 처리할 경우 비점오염저감시설을 \'설치해야 한다\' 11월1일부터 다음연도 1월31일꺼지에 해당하는경우 가동시작일부터 70일 그외의 달에는 50일 수질원격감시체계 관제센터를 설치,운영하는 곳',calc:false},
+  {id:513,subject:1,exam:'2018-03',text:'수자원의 순환에서 가장 큰 비중을 차지하는 것은?',choices:['해양으로의 강우','증발','증산','육지로의 강우'],answer:1,explain:'수자원의 순환에서 가장 큰 비중을 차지하는것은 증발이다.',calc:false},
+  {id:514,subject:1,exam:'2018-03',text:'C2H615g이 완전히 산화하는데 필요한 이론적 산소량(g)은?',choices:['약 46','약 56','약 66','약 76'],answer:3,explain:'C2H6 + 7/2O2 -> 2CO2 + 3H2O 30   :       112 15   :       X 따라서 X는 56',calc:false},
+  {id:515,subject:1,exam:'2018-03',text:'하천의 자정계수(f)에 관한 설명으로 맞는 것은? (단, 기타 조건은 같다고 가정함)',choices:['수온이 상승할수록 자정계수는 작아진다.','수온이 상승할수록 자정계수는 커진다.','수온이 상승하여도 자정계수는 변화가 없이 일정하다.','수온이 20℃인 경우, 자정계수는 가장 크며 그 이상의 수온에서는 점차로 낮아진다.'],answer:3,explain:'자정계수는 수온이 상승할수록 작아짐 KT=K20×1.047^(T-20) =0.1/day×1.047^(10-20) =0.0632/day',calc:false},
+  {id:516,subject:1,exam:'2018-03',text:'다음 설명과 가장 관계있는 것은?',choices:['박테리아','균류','조류','원생동물'],answer:1,explain:'유리산소가 존재해야한다는 것은 호기성이라는 뜻. (혐기성은 결합산소가 존재.) pH 낮은 곳에서도 자라는 것은 균류',calc:false},
+  {id:517,subject:1,exam:'2018-03',text:'Formaldehyde(CH2O)의 COD/TOC비는?',choices:['1.37','1.67','2.37','2.67'],answer:2,explain:'32/12 = 2.67 이 정도는 그냥 2.67이라고 외우자 실제 시험에서 가답안 발표시 1번으로 발표되었지만 확정답안 발표시 3번으로 정정 발표되었습니다.',calc:false},
+  {id:518,subject:1,exam:'2018-03',text:'수질오염물질 중 중금속에 관한 설명으로 틀린 것은?',choices:['카드뮴 : 인체 내에서 투과성이 높고 이동성이 있는 독성 메틸 유도체로 전환된다.','비소 : 인산염 광물에 존재해서 인 화합물 형태로 환경 중에 유입된다.','납 : 급성독성은 신장, 생식계통, 간 그리고 뇌와 중추신경계에 심각한 장애를 유발한다.','수은 : 수은 중독은 BAL, Ca2EDTA로 치료할 수 있다.'],answer:0,explain:'인체 내에서 투과성이 높고 이동성이 있는 독성 메틸 유도체로 전환된다 → 수은',calc:false},
+  {id:519,subject:1,exam:'2018-03',text:'분뇨를 퇴비화 처리할 때 초기의 최적 환경조건으로 가장 거리가 먼 것은?',choices:['축분에 수분조정을 위해 부자재를 혼합할 때 퇴비재료의 적정 C/N비는 25~30이 좋다.','부자재를 혼합하여 수분함량이 20~30% 되로록 한다.','퇴비화는 호기성미생물을 활용하는 기술이므로 산소공급을 충분히 한다.','초기 재료의 pH는 6.0~8.0으로 조정한다.'],answer:1,explain:'수분함량이 50~60퍼가 되도록 함',calc:false},
+  {id:520,subject:1,exam:'2018-03',text:'부영양화 현상을 억제하는 방법으로 가장 거리가 먼 것은?',choices:['비료나 합성세제의 사용을 줄인다.','축산폐수의 유입을 막는다.','과잉번식된 조류(algae)는 황산망간(MnSO4)을 살포하여 제거 또는 억제할 수 있다.','하수처리장에서 질소와 인을 제거하기 위해 고도처리공정을 도입하여 질소, 인의 호소유입을 막는'],answer:2,explain:'황산동(CuSo4)',calc:false},
+  {id:521,subject:2,exam:'2018-03',text:'보통 농업용수의 수질평가 시 SAR로 정의하는데 이에 대한 설명으로 틀린 것은?',choices:['SAR값이 20정도이면 Na+가 토양에 미치는 영향이 적다.','SAR의 값은 Na+, Ca2+, Mg2+ 농도와 관계가 있다.','경수가 연수보다 토양에 더 좋은 영향을 미친다고 볼 수 있다.','SAR의 계산식에 사용되는 이온의 농도는 meq/L를 사용한다.'],answer:2,explain:'Sar 0~10 영향적음 10~18 중간 정도 영향 18~26 비교적 큰 영향',calc:false},
+  {id:522,subject:2,exam:'2018-03',text:'펌프의 공동현상(Cavitation)에 관한 설명 중 틀린 것은?',choices:['공동현상이 생기면 소음이 발생한다.','공동 속의 압력은 절대로 0이 되지는 않는다.','장시간이 경화하면 재료의 침식을 생기게 한다.','펌프의 흡입양정이 작아질수록 공동현상이 발생하기 쉽다.'],answer:1,explain:'펌프의 흡입양정이 커질수록 필요유효흡입수두가 커지므로 공동현상이 발생되기 쉽다. Q=A*V A=파이*D^2/4',calc:false},
+  {id:523,subject:2,exam:'2018-03',text:'하수관거 개ㆍ보수계획 수립 시 포함되어야 할 사항이 아닌 것은?',choices:['불명수량 조사','개ㆍ보수 우선순위의 결정','개ㆍ보수공사 점위의 설정','주변 인근 신설관거 현황 조사'],answer:3,explain:'Q1=Q2 ,  Q=A*V -> A1V1 = A2V2 , A=pi*d^2/4 이므로 [pi*(0.5^2)/4]*2 = [pi*(0.2^2)/4]*X X = 12.5m/s',calc:false},
+  {id:524,subject:2,exam:'2018-03',text:'상수도 최수시설 중 취수틀에 관한 설명으로 옳지 않은 것은?',choices:['구조가 간단하고 시공도 비교적 용이하다.','수중에 설치되므로 호소표면수는 취수할 수 없다.','단기간에 완성하고 안정된 취수가 가능하다.','보통 대형취수에 사용되며 수위변화에 영향이 적다.'],answer:3,explain:'중소량 취수에 이용된다',calc:false},
+  {id:525,subject:2,exam:'2018-03',text:'다음 하수관로에서 평균유속이 2.5m/sec일 때 흐르는 유량(m3/sec)은?',choices:['7.8','12.3','17.5','23.3'],answer:0,explain:'면적구하는거 평행사변형 공식쓰면돼요 윗변더하기밑변 곺하기 높이 나누기2 ->Q/V = 파이*d^2/4 H=I*L+b*(v^2/2g)+a 공식을 적용하시면 됩니다.g = 9.8m/s^2(중력가속도)',calc:false},
+  {id:526,subject:2,exam:'2018-03',text:'하수배제방식이 합류식인 경우 중계펌프장의 계획 하수량으로 가장 옳은 것은?',choices:['우천시 계획오수량','계획우수량','계획시간최대오수량','계획1일최대오수량'],answer:0,explain:'계획 우수량 : 분류식 빗물펌프장 계획시간최대오수량 : 분류식 중계펌프장, 처리장내 펌프장 합류식 빗물 펌프장 : 계획하수량 - 강우시 계획오수량',calc:false},
+  {id:527,subject:2,exam:'2018-03',text:'우물의 양수량 결정 시 적용되는 “적정양수량”의 정의로 옳은 것은?',choices:['최대양수량의 70% 이하','최대양수량의 80% 이하','한계양수량의 70% 이하','한계양수량의 80% 이하'],answer:0,explain:'한계 양수량의 70% 이하',calc:false},
+  {id:528,subject:2,exam:'2018-03',text:'계획송수량과 계획도수량의 기준이 되는 수량은?',choices:['계획송수량 : 계획1일최대급수량','계획송수량 : 계획시간최대급수량','계획송수량 : 계획취수량','계획송수량 : 계획1일최대급수량'],answer:3,explain:'취수, 정수, 송수 : 계획1일최대급수량 도수 : 계획취수량 배수 : 계획시간 최대급수량',calc:false},
+  {id:529,subject:2,exam:'2018-03',text:'정수처리시설인 응집지 내의 플록형성지에 관한 설명 중 틀린 것은?',choices:['플록형성지는 혼화지와 침전지 사이에 위치하고 침전지에 붙여서 설치한다.','플록형성은 응집된 미소플록을 크게 성장시키기 위해 적당한 기계식교반이나 우류식교반이 필요하','플록형성지 내의 교반강도는 하류로 갈수록 점차 증가시키는 것이 바람직하다.','플록형성지는 단락류나 정체부가 생기지 않으면서 충분하게 교반될 수 있는 구조로 한다.'],answer:3,explain:'하류로 갈 수록 감소해야해요',calc:false},
+  {id:530,subject:2,exam:'2018-03',text:'취수시설 중 취수보의 위치 및 구조에 대한 고려사항으로 옳지 않은 것은?',choices:['유심이 취수구에 가까우며 안정되고 홍수에 의한 하상변화가 적은 지점으로 한다.','원칙적으로 철근콘크리트 구조로 한다.','침수 및 홍수시 수면상승으로 인하여 상류에 위치한 하천공작물 등에 미치는 영향이 적은 지점에 설','원칙적으로 홍수의 유심방향과 평행인 직선형으로 가능한 한 하천의 곡선부에 설치한다.'],answer:1,explain:'원칙적으로 홍수의 \'유심방향\'과 직각의 직선형으로 가능한 한 하천의 \'직선부\'에 설치함 1200m×2/1000=2.4m',calc:false},
+  {id:531,subject:2,exam:'2018-03',text:'도수관을 설계할 때 평균유속 기준으로 옳은 것은?',choices:['㉠ 1.5 m/s, ㉡ 0.3 m/s','㉠ 1.5 m/s, ㉡ 0.6 m/s','㉠ 3.0 m/s, ㉡ 0.3 m/s','㉠ 3.0 m/s, ㉡ 0.6 m/s'],answer:2,explain:'도수관거 최소 0.3 최대 3 합류 및 우수관거 최소 0.8 최대 3 오수관거 최소 0.6 최대 3',calc:false},
+  {id:532,subject:2,exam:'2018-03',text:'하수 관거시설인 빗물받이의 설치에 관한 설명으로 틀린 것은?',choices:['협잡물 및 토사의 유입을 저감할 수 있는 방안을 고려하여야 한다.','설치위치는 보ㆍ차도 구분이 없는 경우에는 도로와 사유지의 경계에 설치한다.','도로 옆의 물이 모이기 쉬운 장소나 L형 측구의 유하 방향 하단부에 설치한다.','우수침수방지를 위하여 횡단보도 및 가옥의 출입구 앞에 설치함을 원칙으로 한다.'],answer:3,explain:'횡단보도 및 가옥의 출입구 앞에는 가급적 설치하지않는것이 좋다',calc:false},
+  {id:533,subject:3,exam:'2018-03',text:'상수처리를 위한 약품침전지의 구성과 구조로 틀린 것은?',choices:['슬러지의 퇴적심도로서 30cm 이상을 고려한다.','유효수심은 3~5.5m로 한다.','침전지 바닥에는 슬러지 배제에 편리하도록 배수구를 향하여 경사지게 한다.','고수위에서 침전지 벽체 상단까지의 여유고는 10cm 정도로 한다.'],answer:3,explain:'여유고는 30cm',calc:false},
+  {id:534,subject:3,exam:'2018-03',text:'정수장 응집 공정에 사용되는 화학 약품 중 나머지 셋과 그 용도가 다른 하나는?',choices:['오존','명반','폴리비닐아민','황산제일철'],answer:3,explain:'오존: 살균제 나머지는 다 응집제 염소 주입농도 = 9.5+0.5=10mg/L 0.01kg/m3×200m3/hr × 24hr/day = 48kg/day',calc:false},
+  {id:535,subject:3,exam:'2018-03',text:'고농도의 액상 PCB 처리방법으로 가장 거리가 먼 것은/',choices:['방사선조사(코발트 60에 의한r선 조사)','연소법','자외선조사법','고온 고압 알칼리 분해법'],answer:1,explain:'고농도 액상 PCB 처리방법: 연소법, 자외선 조사법, 고온고압 알칼리 분해법 시안을 함유한 폐수처리 -알칼리 염소처리 -오존산화',calc:false},
+  {id:536,subject:3,exam:'2018-03',text:'바퀴모양의 극미동물이며, 상당히 양호한 생물학적 처리에 대한 지표미생물은?',choices:['Psychodidae','Rotifera','Vorticella','Sphaerotillus'],answer:1,explain:'고등동물 (Rotifrea, 바퀴벌레)가 발견됐다 = 생물학적 처리나 하천 자정작용이 잘 이루어졌음을 보여주 는 지표이다.',calc:false},
+  {id:537,subject:3,exam:'2018-03',text:'시공계획의 수립 시 준비단계에서 고려할 사항 중 가장 거리가 먼 것은?',choices:['계약조건, 설계도, 시방서 및 공사조건을 충분히 검토한 후 시공할 작업의 범위를 결정','이용 가능한 자원을 최대로 활용할 수 있도록 현장의 각종 제약조건을 분석','계획,실시, 검토, 통제의 단계를 거쳐 작성','예정공기를 벗어나지 않는 범위내에서 가장 경제적인 시공이 될 수 있는 공법과 공정계획 수립'],answer:1,explain:'계획 - 검토 - 실시 - 통제 순 Sa=18.7mL/L, f=0.5, P=4기압, MLSS=1500mg/L 위 변수들을 아래 공식에 넣어 답을 구한다. A/S비=[{(1.3)(Sa)(f*P-1)}/MLSS] = 0.016',calc:false},
+  {id:538,subject:3,exam:'2018-03',text:'혐기성 처리와 호기성 처리의 비교 설명으로 가장 거리가 먼 것은?',choices:['호기성 처리가 혐기성 처리보다 유출수의 수질이 더 좋다.','혐기성 처리가 호기성 처리보다 슬러지 발생량이 더 적다.','호기성 처리에서는 1차침전지가 필요하지만 혐기성 처리에서는 1차침전지가 필요 없다.','주어진 기질량에 대한 영양물질의 필요성은 호기성 처리보다 혐기성 처리에서 더 크다.'],answer:0,explain:'호기성 독립영양미생물, 혐기성 유입폐수의 유기물이용 [추가 해설] 호기성이 유출수 수질 및 처리속도, 양이 압도적(슬러지발생량 多) 혐기성의 경우 슬러지 발생량이 적고 호기성보다 체류시간이 김',calc:false},
+  {id:539,subject:3,exam:'2018-03',text:'혐기성 공법 중 혐기성 유동상의 장점이라 볼수 없는 것은?',choices:['짧은 수기학적 체류시간과 높은 부하율로 운전이 가능하다.','유출수는 재순환이 필요 없으므로 공정이 간단하다.','매질의 첨가나 제거가 쉽다.','독성물질에 대한 완충능력이 좋다.'],answer:1,explain:'유출수의 재순환이 필요하며, 공정이 복잡하다.',calc:false},
+  {id:540,subject:3,exam:'2018-03',text:'하ㆍ폐수를 통하여 배출되는 계면활성제 대한 설명 중 잘못된 것은?',choices:['계면활성제는 메틸렌블루 활성물질이라고도 한다.','계면활성제는 주로 합성세제로부터 배출되는 것이다.','물에 약간 녹으면 폐수처리 플랜트에서 거품을 만들게 된다.','ABS는 생물학적으로 분해가 매우 쉬우나 LAS는 생물학적으로 분해가 어려운 난분해성 물질이다.'],answer:3,explain:'ABS는 세척력은 우수하지만 쉽게 분해되지않음',calc:false},
+  {id:541,subject:4,exam:'2018-03',text:'오존을 이용한 소독에 관한 설명으로 틀린 것은?',choices:['오존은 화학적으로 불안정하여 현장에서 직접 제조하여 사용해야 한다.','오존은 산소의 동소체로서 HOCI 보다 더 강력한 산화제이다.','오존은 20℃ 증류수에서 반감기가 20~30분 이고 용액 속에 산화제를 요구하는 물질이 존재하면 반','잔류성이 강하여 2차 오염을 방지하며 냄새제거에 매우 효과적이다.'],answer:3,explain:'잔류성이 없고, 탈취탈색효과가 크다. PH혼합 = -log((Q1N1+Q2N2)/Q1+Q2), -log((1000x10^-3 + 10000x10^-8)/1000+10000)=4.04',calc:false},
+  {id:542,subject:4,exam:'2018-03',text:'알칼리성 KMnO4법으로 COD를 측정하기 위하여 사용하는 표준적정액은?',choices:['NaOH','KMnO4','Na2S2O3','Na2C2O4'],answer:2,explain:'칼리성 KMnO4법으로 COD를 측정하기 위하여 사용하는 표준적정액은? 옥살산나트륨 Na2C2O4 입니다.',calc:false},
+  {id:543,subject:4,exam:'2018-03',text:'수질오염공정시험기준 상 탁도 측정에 관한 설명으로 틀린 것은?',choices:['파편과 입자가 큰 침전이 존재하는 시료를 빠르게 침전시킬 경우, 탁도값이 낮게 측정된다.','물에 색깔이 있는 시료는 잠재적으로 측정값이 높게 분석된다.','시료 속에 거품은 빛을 산란시키고 높은 측정값을 나타낸다.','탁도를 측정하기 위해서는 탁도계를 이용하여 물의 흐림 정도를 측정한다.'],answer:1,explain:'물에 색깔이 있으면 색이 빛을 흡수해서 측정값이 낮게 분석된다.',calc:false},
+  {id:544,subject:4,exam:'2018-03',text:'pH 미터의 유지관리에 대한 설명으로 틀린 것은?',choices:['전극이 더러워 졌을 때는 유리전극을 묽은 염산에 잠시 담갔다가 증류수로 씻는다.','유리전극을 사용하지 않을 때는 증류수에 담가둔다.','유지, 그리스 등이 전극표면에 부착되면 유기용매로 적신 부드러운 종이로 전극을 닦고 증류수로 씻','전극에 발생하는 조류나 미생물은 전극을 보호하는 작용이므로 떨어지지 않게 주의한다.'],answer:3,explain:'전극에서 발생하는 조류와 미생물은 pH측정을 방해하므로 제거해야 한다',calc:false},
+  {id:545,subject:4,exam:'2018-03',text:'분원성 대장균군-막여과법에서 배양온도 유지 기준은?',choices:['25±0.2℃','30±0.5℃','35±0.5℃','44.5±0.2℃'],answer:3,explain:'총 대장균군 35+- 0.5도 분원성대장균군 44.5+- 0.2도',calc:false},
+  {id:546,subject:4,exam:'2018-03',text:'35% HCI(비중 1.19)을 10% HCI으로 만들려면 35% HCI과 물의 용량비는?',choices:['1 : 1.5','3 : 1','1 : 3','1.5 : 1'],answer:0,explain:'35% 비중 1.19 HCl -> 10% HCl, 35% HCl과 H2O 용량비? 순수 염산에서 물은 0 염산 x 물 y 35x + 0y = 10(x+y)',calc:false},
+  {id:547,subject:4,exam:'2018-03',text:'퇴적물의 완전연소가능량 측정에 관한 내용으로 ( )에 옳은 것은?',choices:['㉠ 400, ㉡ 1','㉠ 400, ㉡ 2','㉠ 550, ㉡ 1','㉠ 550, ㉡ 2'],answer:2,explain:'퇴적물의 완전연소 가능량 측정은, 110도에서 건조시킨 시료를 도가니에 담고 무게를 측정한 다음, 550도에서 2시간 가열한 후 다시 무게를 측정한다.',calc:false},
+  {id:548,subject:4,exam:'2018-03',text:'ppm을 설명한 것으로 틀린 것은?',choices:['ppb농도의 1000배 이다.','백만분율이라고 하나.','mg/kg이다.','%농도의 1/1000 이다.'],answer:0,explain:'%농도의 1/10000입니다 시료량의 0.5%를 넘지않도록 한다.',calc:true},
+  {id:549,subject:4,exam:'2018-03',text:'수질오염공정시험기준에서 기체크로 마토그래피로 측정하지 않는 항목은?',choices:['유기인','음이온계면활성제','폴리클로리네이티드비페닐','알킬수은'],answer:1,explain:'기체크로마토 그래피는 일반적으로 유기화합물(알킬수은, 유기인, 석유계총탄화수소, PCB, 휘발성 유기 화합물)에 대한 정성 정량 분석에 이옹된다.',calc:false},
+  {id:550,subject:4,exam:'2018-03',text:'총 질소-연속흐름법에 관한 내용으로 ( )에 옳은 것은?',choices:['수산화나트륨(0.025N)용액 칼럼','무수황산나트륨 환원 칼럼','환원증류ㆍ킬달 칼럼','카드뮴-구리환원 칼럼'],answer:2,explain:'유기물을 다량 함유하고 있으면서 산분해가 어려운 시료에 적용하는 전처리법에는 질산-과염소산 산분 해법과 마이크로파 산분해법이 있다.',calc:false},
+  {id:551,subject:4,exam:'2018-03',text:'일반적으로 기체크로마토그래피의 열전도도 검출기에서 사용하는 운반기체의 종류는?',choices:['헬륨','질소','산소','이산화탄소'],answer:0,explain:'열전도도 검출기의 운반기체는 수소나 헬륨을 이용, 보기엔 수소가 없으므로 따라서 정답은 1번!',calc:false},
+  {id:552,subject:4,exam:'2018-03',text:'카드뮴을 자외선/가시선 분광법으로 측정할 떄 사용되는 시약으로 가장 거리가 먼 것은?',choices:['수산화나트륨용액','요오드화칼륨용액','시안화칼륨용액','타타르산용액'],answer:1,explain:'카드뮴 UV/VIS 측정법 : 물속에 존재하는 카드뮴이온을 시안화카륨이 존재하는 알칼리성에서 디티존과 반응시켜 생성하는 카드 뮴착염을 사염화탄소로 추출하고, 추출한 카드뮴 착염을 타타르산용액으로 역추출한 다음 다시 수산화나 트륨과 시안화칼륨을 넣어 디티존과 반응하여 생성하는 적색의 카드뮴착염을 사염화탄소로 추출하고 그',calc:false},
+  {id:553,subject:4,exam:'2018-03',text:'전기전도도 측정에 관한 설명으로 틀린 것은?',choices:['용액이 전류를 운반할 수 있는 정도를 말한다.','온도차에 의한 영향이 적어 폭 넓게 적용된다.','용액에 담겨있는 2개의 전극에 일정한 전압을 가해주면 가한 전압이 전류를 흐르게 하며, 이 떄 흐르','용액 중의 이온세기를 신속하게 평가할 수 있는 항목으로 국제적으로 S(Siemens)단위가 통용되고'],answer:1,explain:'2. 온도차에 의한 영향이 크다.',calc:false},
+];
+
+// ══ 상수 ══
+const EXAM=new Date('2026-08-01T09:00:00+09:00');
+const SN={1:'수질오염개론',2:'상하수도계획',3:'수질오염방지기술',4:'수질오염공정시험기준'};
+const SC={1:'var(--accent)',2:'var(--green)',3:'var(--yellow)',4:'#e879a0'};
+const LS_KEY='wqj_v5';
+const LS_URL_KEY='wqj_gas_url';
+
+// ══ 상태 ══
+function ds(){return{wrongMap:{},sessions:[],totAns:0,totCor:0};}
+let S=ds();
+let GAS_URL='';
+
+// ══ 초기화 ══
+async function init(){
+  // 1. GAS URL 로드
+  GAS_URL=localStorage.getItem(LS_URL_KEY)||'';
+
+  // 2. 기존 데이터 마이그레이션 (v3/v4 → v5)
+  const migrated=tryMigrate();
+
+  if(GAS_URL){
+    // URL 있으면 드라이브에서 불러오기
+    document.getElementById('setup-card').classList.add('hidden');
+    document.getElementById('sync-bar').classList.remove('hidden');
+    await loadFromDrive(migrated);
+  } else {
+    // URL 없으면 로컬 데이터 사용
+    S=migrated||ds();
+    renderHome();
+  }
+}
+
+// ══ 마이그레이션 ══
+function tryMigrate(){
+  // v5 자체 로컬 데이터 우선
+  const keys=['wqj_v5','wqj_v4_1','wqj_v4','wqj_v3','wq_jarvis_v3'];
+  for(const k of keys){
+    try{
+      const raw=localStorage.getItem(k);
+      if(raw){
+        const p=JSON.parse(raw);
+        if(p&&p.wrongMap) return p;
+      }
+    }catch(e){}
+  }
+  return null;
+}
+
+// ══ GAS URL 관리 ══
+function saveGasUrl(){
+  const url=document.getElementById('gas-url-input').value.trim();
+  if(!url||!url.startsWith('https://')){alert('올바른 URL을 입력해주세요.');return;}
+  GAS_URL=url;
+  localStorage.setItem(LS_URL_KEY,url);
+  document.getElementById('setup-card').classList.add('hidden');
+  document.getElementById('sync-bar').classList.remove('hidden');
+  // 기존 로컬 데이터 드라이브로 업로드 후 리로드
+  saveToLocal();
+  syncToDrive().then(()=>loadFromDrive(null));
+}
+function hideSetup(){
+  document.getElementById('setup-card').classList.add('hidden');
+  S=tryMigrate()||ds();
+  setSyncBar('warn','⚠️ 로컬 저장 중 (드라이브 미연동)');
+  renderHome();
+}
+function resetGasUrl(){
+  if(!confirm('드라이브 연동을 해제하고 재설정하시겠습니까?'))return;
+  GAS_URL='';
+  localStorage.removeItem(LS_URL_KEY);
+  document.getElementById('sync-bar').classList.add('hidden');
+  document.getElementById('setup-card').classList.remove('hidden');
+}
+
+// ══ 드라이브 연동 ══
+async function loadFromDrive(localFallback){
+  setSyncBar('ing','⏳ 드라이브에서 불러오는 중...');
+  try{
+    const res=await fetch(GAS_URL+'?action=load');
+    const json=await res.json();
+    if(json.ok&&json.data){
+      S=json.data;
+      // 로컬 데이터가 더 최신이면 병합 (오답 개수 기준)
+      if(localFallback){
+        const localCount=Object.keys(localFallback.wrongMap||{}).length;
+        const driveCount=Object.keys(S.wrongMap||{}).length;
+        if(localCount>driveCount){
+          S=localFallback;
+          await syncToDrive();
+          setSyncBar('ok','✅ 로컬→드라이브 업로드 완료');
+        } else {
+          setSyncBar('ok','✅ 드라이브 연동 완료');
+        }
+      } else {
+        setSyncBar('ok','✅ 드라이브 연동 완료');
+      }
+    } else {
+      // 드라이브에 데이터 없음 → 로컬 업로드
+      S=localFallback||ds();
+      await syncToDrive();
+      setSyncBar('ok','✅ 드라이브 초기화 완료');
+    }
+  }catch(e){
+    S=localFallback||ds();
+    setSyncBar('err','❌ 드라이브 연결 실패 — 로컬 모드');
+  }
+  saveToLocal();
+  renderHome();
+}
+
+async function syncToDrive(){
+  if(!GAS_URL)return;
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'save',data:S})
+    });
+  }catch(e){}
+}
+
+function saveToLocal(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify(S));}catch(e){}
+}
+
+function setSyncBar(type,msg){
+  const el=document.getElementById('sync-bar');
+  el.className='sync-bar '+type;
+  document.getElementById('sync-msg').textContent=msg;
+}
+
+// ══ 저장 (드라이브 + 로컬 동시) ══
+function saveAll(){
+  saveToLocal();
+  syncToDrive();
+}
+
+// ══ 유틸 ══
+function dday(){return Math.max(0,Math.ceil((EXAM-new Date())/(864e5)));}
+function today(){const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function examLabel(e){if(!e)return'';const[y,m]=e.split('-');return`${y}년 ${m}월`;}
+
+// ══ 망각곡선 ══
+function getDue(){
+  const t=today();
+  return Object.entries(S.wrongMap)
+    .filter(([,v])=>v.nextDue&&v.nextDue<=t)
+    .map(([id])=>QUESTIONS.find(q=>q.id===+id)).filter(Boolean);
+}
+function markWrong(qid,subj){
+  const ex=S.wrongMap[qid];
+  const cnt=(ex?ex.count:0)+1;
+  const days=[1,3,7][Math.min(cnt-1,2)];
+  const nd=new Date();nd.setDate(nd.getDate()+days);
+  const nextDue=`${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,'0')}-${String(nd.getDate()).padStart(2,'0')}`;
+  S.wrongMap[qid]={count:cnt,lastWrong:today(),nextDue,subject:subj};
+  saveAll();
+}
+function markCorrect(qid){
+  if(S.wrongMap[qid]){S.wrongMap[qid].nextDue=null;saveAll();}
+}
+
+// ══ 홈 렌더 ══
+function renderHome(){
+  const d=dday();
+  document.getElementById('hero-days').textContent=d;
+  document.getElementById('dday-text').textContent='D-'+d;
+  function acc(subj){
+    let tot=0,cor=0;
+    S.sessions.forEach(s=>{
+      if(subj==='all'){tot+=s.total;cor+=s.correct;}
+      else if(s.bs&&s.bs[subj]){tot+=s.bs[subj].t;cor+=s.bs[subj].c;}
+    });
+    return tot?Math.round(cor/tot*100):null;
+  }
+  const a=acc('all');
+  document.getElementById('stat-all').textContent=a!==null?a+'%':'-';
+  for(let i=1;i<=4;i++){
+    const v=acc(i);
+    document.getElementById('stat-'+i).textContent=v!==null?v+'%':'-';
+    const ec=Object.values(S.wrongMap).filter(w=>w.subject===i&&w.nextDue).length;
+    document.getElementById('err-'+i).textContent=ec?'오답 '+ec+'개':'';
+  }
+  const ea=Object.values(S.wrongMap).filter(w=>w.nextDue).length;
+  document.getElementById('err-all').textContent=ea?'누적 오답 '+ea+'개':'';
+  const cnt=getCfg().count;
+  document.getElementById('main-start-btn').textContent=`전과목 ${cnt}문제 시작 →`;
+  const due=getDue();
+  const banner=document.getElementById('due-banner');
+  if(due.length){banner.classList.remove('hidden');document.getElementById('due-count').textContent=due.length+'문제';}
+  else banner.classList.add('hidden');
+  renderReview();renderDueTab();
+}
+
+// ══ 오답노트 ══
+function renderReviewList(cid,items){
+  const w=document.getElementById(cid);
+  if(!items.length){w.innerHTML='<div class="review-empty">문제가 없습니다.<br>퀴즈를 풀면 자동으로 쌓입니다.</div>';return;}
+  const t=today();
+  w.innerHTML=items.map(([id,info])=>{
+    const q=QUESTIONS.find(qq=>qq.id===+id);if(!q)return'';
+    const isDue=info.nextDue&&info.nextDue<=t;
+    const dueTag=isDue?'<span class="tag due-tag">오늘 복습</span>':(info.nextDue?`<span class="tag">${info.nextDue} 복습 예정</span>`:'<span class="tag" style="color:var(--green)">✓ 고착</span>');
+    const choicesHtml=q.choices.map((c,i)=>`<div class="r-choice ${i===q.answer?'r-correct':''}">${i+1}. ${c}</div>`).join('');
+    return`<div class="review-item ${isDue?'due-item':''}">
+      <div class="review-header" onclick="toggleDetail(this)">
+        <div class="review-q">${q.text}</div>
+        <div class="review-meta">
+          <span class="tag subj-tag">${SN[q.subject]}</span>
+          <span class="tag exam-tag">📅 ${examLabel(q.exam)}</span>
+          <span class="tag">틀린 ${info.count}회</span>
+          ${dueTag}
+        </div>
+      </div>
+      <button class="toggle-detail" onclick="toggleDetail(this.previousElementSibling)">▼ 보기·정답 보기</button>
+      <div class="review-detail">
+        <div class="review-choices">${choicesHtml}</div>
+        <div class="r-explain">📌 ${q.explain}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleDetail(h){
+  const item=h.closest('.review-item');
+  const det=item.querySelector('.review-detail');
+  const btn=item.querySelector('.toggle-detail');
+  const open=det.classList.contains('open');
+  det.classList.toggle('open');
+  btn.textContent=open?'▼ 보기·정답 보기':'▲ 접기';
+}
+function renderReview(){renderReviewList('tab-review',Object.entries(S.wrongMap).filter(([,v])=>v.count>0));}
+function renderDueTab(){
+  const t=today();
+  renderReviewList('tab-due',Object.entries(S.wrongMap).filter(([,v])=>v.nextDue&&v.nextDue<=t));
+}
+function switchTab(name){
+  ['review','due','subj'].forEach(t=>document.getElementById('tab-'+t).classList.add('hidden'));
+  document.getElementById('tab-'+name).classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',['review','due','subj'][i]===name));
+}
+
+// ══ 설정 ══
+function getCfg(){
+  const cnt=+(document.querySelector('#cnt-group .btn-opt.active')?.dataset.val||20);
+  const calc=document.querySelector('#calc-group .btn-opt.active')?.dataset.val==='include';
+  const timer=document.querySelector('#timer-group .btn-opt.active')?.dataset.val==='on';
+  return{count:cnt,calc,timer};
+}
+['cnt-group','calc-group','timer-group'].forEach(gid=>{
+  document.getElementById(gid).addEventListener('click',e=>{
+    if(!e.target.classList.contains('btn-opt'))return;
+    e.target.closest('.btn-group').querySelectorAll('.btn-opt').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');renderHome();
+  });
+});
+
+// ══ 퀴즈 ══
+let QQ=[],QI=0,TI=null,TL=30,sCor=0,sTot=0,sBS={},lastMode='random';
+function startQuiz(mode){
+  lastMode=mode;
+  const cfg=getCfg();
+  let pool=[];
+  if(mode==='due')pool=getDue();
+  else if(mode==='random')pool=[...QUESTIONS];
+  else pool=QUESTIONS.filter(q=>q.subject===mode);
+  if(!cfg.calc)pool=pool.filter(q=>!q.calc);
+  pool=pool.sort(()=>Math.random()-0.5);
+  QQ=pool.slice(0,Math.min(cfg.count,pool.length));
+  if(!QQ.length){alert('출제할 문제가 없습니다.');return;}
+  QI=0;sCor=0;sTot=0;sBS={};
+  document.getElementById('quiz-screen').classList.add('show');
+  renderQ();
+}
+function renderQ(){
+  const q=QQ[QI],cfg=getCfg(),total=QQ.length;
+  document.getElementById('progress-fill').style.width=(QI/total*100)+'%';
+  document.getElementById('q-counter').textContent=(QI+1)+'/'+total;
+  document.getElementById('q-subject').textContent=SN[q.subject]||'';
+  document.getElementById('q-exam').textContent=q.exam?`📅 ${examLabel(q.exam)}`:'';
+  document.getElementById('q-text').textContent=q.text;
+  document.getElementById('explain-box').classList.add('hidden');
+  document.getElementById('btn-next').classList.add('hidden');
+  document.getElementById('q-choices').innerHTML=q.choices.map((c,i)=>`<button class="choice" onclick="pick(${i})">${i+1}. ${c}</button>`).join('');
+  clearTI();
+  if(cfg.timer){TL=30;setBar(30,30);TI=setInterval(()=>{TL--;setBar(TL,30);if(TL<=0){clearTI();reveal(null);}},1000);}
+  else{document.getElementById('timer-fill').style.width='100%';document.getElementById('timer-fill').style.background='var(--green)';}
+}
+function setBar(l,t){
+  const p=l/t*100,f=document.getElementById('timer-fill');
+  f.style.width=p+'%';
+  f.style.background=p>50?'var(--green)':p>20?'var(--yellow)':'var(--red)';
+}
+function clearTI(){if(TI){clearInterval(TI);TI=null;}}
+function pick(idx){clearTI();reveal(idx);}
+function reveal(sel){
+  const q=QQ[QI];const ok=sel===q.answer;
+  document.querySelectorAll('.choice').forEach((el,i)=>{
+    el.disabled=true;
+    if(i===q.answer)el.classList.add(sel===null?'reveal-correct':'correct');
+    else if(i===sel)el.classList.add('wrong');
+  });
+  sTot++;
+  if(!sBS[q.subject])sBS[q.subject]={t:0,c:0};
+  sBS[q.subject].t++;
+  if(ok){sCor++;sBS[q.subject].c++;markCorrect(q.id);}
+  else markWrong(q.id,q.subject);
+  document.getElementById('explain-text').textContent=q.explain;
+  document.getElementById('explain-box').classList.remove('hidden');
+  const nb=document.getElementById('btn-next');
+  nb.classList.remove('hidden');
+  nb.textContent=QI<QQ.length-1?'다음 →':'결과 보기';
+}
+function nextQuestion(){QI++;QI>=QQ.length?showResult():renderQ();}
+function exitQuiz(){clearTI();document.getElementById('quiz-screen').classList.remove('show');renderHome();}
+
+// ══ 결과 ══
+function showResult(){
+  clearTI();document.getElementById('quiz-screen').classList.remove('show');
+  S.totAns+=sTot;S.totCor+=sCor;
+  S.sessions.push({date:today(),total:sTot,correct:sCor,bs:sBS});
+  saveAll();
+  const pct=Math.round(sCor/sTot*100);
+  const pe=document.getElementById('result-pct');
+  pe.textContent=pct+'%';pe.className='result-pct '+(pct>=60?'pass':'fail');
+  document.getElementById('result-sub').textContent=sTot+'문제 · 정답 '+sCor+'개 · 오답 '+(sTot-sCor)+'개';
+  document.getElementById('result-grid').innerHTML=Object.entries(sBS).map(([s,d])=>{
+    const p=Math.round(d.c/d.t*100);
+    return`<div class="result-card">
+      <div class="result-card-label" style="color:${SC[s]}">${SN[s]}</div>
+      <div class="result-card-val" style="color:${p>=60?'var(--green)':'var(--red)'}">${p}%</div>
+      <div style="font-size:10px;color:var(--sub);margin-top:2px">${d.c}/${d.t}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('result-screen').classList.add('show');
+  renderHome();
+}
+function retryQuiz(){document.getElementById('result-screen').classList.remove('show');startQuiz(lastMode);}
+function goHome(){document.getElementById('result-screen').classList.remove('show');renderHome();}
+
+// ══ 시작 ══
+init();
+</script>
+</body>
+</html>
